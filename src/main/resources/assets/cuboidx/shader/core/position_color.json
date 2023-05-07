@@ -1,0 +1,30 @@
+{
+  "vertex": "cuboidx:shader/core/position_color",
+  "fragment": "cuboidx:shader/core/position_color",
+  "uniforms": {
+    "ProjectionMatrix": {
+      "type": "mat4",
+      "values": [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      ]
+    },
+    "ModelViewMatrix": {
+      "type": "mat4",
+      "values": [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      ]
+    },
+    "ColorModulator": {
+      "type": "vec4",
+      "values": [
+        1.0, 1.0, 1.0, 1.0
+      ]
+    }
+  }
+}
