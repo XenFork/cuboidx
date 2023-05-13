@@ -24,9 +24,11 @@ import org.jetbrains.annotations.Nullable;
  * @author squid233
  * @since 0.1.0
  */
-public record ResourceLocation(String namespace, String path) {
+public /* value */ record ResourceLocation(String namespace, String path) {
     public static final String DEFAULT_NAMESPACE = "cuboidx";
     public static final String ASSETS = "assets";
+    public static final String SHADER = "shader";
+    public static final String TEXTURE = "texture";
 
     public static ResourceLocation cuboidx(String path) {
         return new ResourceLocation(DEFAULT_NAMESPACE, path);
@@ -41,9 +43,11 @@ public record ResourceLocation(String namespace, String path) {
         };
     }
 
-    public String toPath(@Nullable String prefix) {
-        if (prefix == null) return namespace + '/' + path;
-        return prefix + '/' + namespace + '/' + path;
+    public String toPath(@Nullable String prefix, @Nullable String type) {
+        final String s = type == null
+            ? (namespace + '/' + path)
+            : (namespace + '/' + type + '/' + path);
+        return prefix == null ? s : (prefix + '/' + s);
     }
 
     @Override

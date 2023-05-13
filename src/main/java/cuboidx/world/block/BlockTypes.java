@@ -16,44 +16,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.client.gl;
+package cuboidx.world.block;
 
-import org.overrun.glib.gl.GL;
+import cuboidx.util.ResourceLocation;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public enum GLDrawMode {
-    TRIANGLES(GL.TRIANGLES, 3, 0, 1, 2),
-    QUADS(GL.TRIANGLES, 4, 0, 1, 2, 0, 2, 3),
-    ;
+public final class BlockTypes {
+    public static final BlockType GRASS_BLOCK = new BlockType.Builder()
+        .texture(direction -> ResourceLocation.cuboidx("block/grass_block_top"))
+        .build();
 
-    private final int enumValue;
-    private final int vertexCount;
-    private final int indexCount;
-    private final int[] indices;
-
-    GLDrawMode(int enumValue, int vertexCount, int... indices) {
-        this.enumValue = enumValue;
-        this.vertexCount = vertexCount;
-        this.indexCount = indices.length;
-        this.indices = indices;
-    }
-
-    public int enumValue() {
-        return enumValue;
-    }
-
-    public int vertexCount() {
-        return vertexCount;
-    }
-
-    public int indexCount() {
-        return indexCount;
-    }
-
-    public int[] indices() {
-        return indices;
+    private BlockTypes() {
+        //no instance
     }
 }

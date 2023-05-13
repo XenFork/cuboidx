@@ -23,6 +23,13 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.net.URI;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -55,8 +62,61 @@ public final class FileUtil {
             }
             return sb.toString();
         } catch (Exception e) {
-            logger.error("Failed to load file '" + path + "'", e);
+            logger.error("Failed to load file '" + path + '\'', e);
             return null;
         }
+    }
+
+    public static MemorySegment readBinary(String path, int bufferSize) {
+        return readBinary(STACK_WALKER.getCallerClass(), path, bufferSize);
+    }
+
+    public static MemorySegment readBinary(Class<?> cls, String path, int bufferSize) {
+        return readBinary(cls.getClassLoader(), path, bufferSize);
+    }
+
+    public static MemorySegment readBinary(ClassLoader classLoader, String path, int bufferSize) {
+        final boolean isHttp = path.startsWith("http");
+        final Path filePath = isHttp ? null : Path.of(path);
+        try {
+            // Check whether on local
+            if (filePath != null && Files.isReadable(filePath)) {
+                try (FileChannel channel = FileChannel.open(filePath)) {
+                    return channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size(), Arena.ofAuto());
+                }
+            }
+
+            // On classpath
+            try (
+                var is = isHttp ?
+                    new URI(path).toURL().openStream() :
+                    Objects.requireNonNull(classLoader.getResourceAsStream(path),
+                        "Failed to load resource '" + path + "'!")
+            ) {
+                final Arena arena = Arena.ofAuto();
+                MemorySegment segment = arena.allocate(bufferSize);
+
+                // Creates a byte array to avoid creating it each loop
+                final byte[] bytes = new byte[8192];
+                long pos = 0;
+                int count;
+                while ((count = is.read(bytes)) > 0) {
+                    if (pos + count >= segment.byteSize()) {
+                        segment = resizeSegment(arena, segment, Math.ceilDiv(segment.byteSize() * 3, 2)); // 50%
+                    }
+                    MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, pos, count);
+                    pos += count;
+                }
+
+                return segment.asSlice(0, pos);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to load file '" + path + '\'', e);
+            return null;
+        }
+    }
+
+    private static MemorySegment resizeSegment(Arena arena, MemorySegment segment, long newCapacity) {
+        return arena.allocate(newCapacity).copyFrom(segment);
     }
 }

@@ -28,6 +28,7 @@ public final class GLStateMgr {
     private static int currentProgram = 0;
     private static int vertexArrayBinding = 0;
     private static int arrayBufferBinding = 0;
+    private static int textureBinding2D = 0;
 
     public static void useProgram(int program) {
         if (currentProgram != program) {
@@ -60,5 +61,16 @@ public final class GLStateMgr {
 
     public static int arrayBufferBinding() {
         return arrayBufferBinding;
+    }
+
+    public static void bindTexture2D(int texture) {
+        if (textureBinding2D != texture) {
+            textureBinding2D = texture;
+            GL.bindTexture(GL.TEXTURE_2D, texture);
+        }
+    }
+
+    public static int textureBinding2D() {
+        return textureBinding2D;
     }
 }

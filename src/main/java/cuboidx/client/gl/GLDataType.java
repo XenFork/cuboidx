@@ -29,6 +29,7 @@ import java.lang.foreign.ValueLayout;
 public enum GLDataType {
     BYTE(GL.BYTE, Byte.BYTES, "Byte", ValueLayout.JAVA_BYTE),
     UNSIGNED_BYTE(GL.UNSIGNED_BYTE, Byte.BYTES, "Unsigned Byte", ValueLayout.JAVA_BYTE),
+    INT(GL.INT, Integer.BYTES, "Int", ValueLayout.JAVA_INT),
     FLOAT(GL.FLOAT, Float.BYTES, "Float", ValueLayout.JAVA_FLOAT_UNALIGNED);
 
     private final int enumValue;

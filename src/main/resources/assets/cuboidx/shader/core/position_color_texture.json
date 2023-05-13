@@ -1,6 +1,6 @@
 {
-  "vertex": "cuboidx:core/position_color",
-  "fragment": "cuboidx:core/position_color",
+  "vertex": "cuboidx:core/position_color_texture",
+  "fragment": "cuboidx:core/position_color_texture",
   "uniforms": {
     "ProjectionMatrix": {
       "type": "mat4",
@@ -25,6 +25,10 @@
       "values": [
         1.0, 1.0, 1.0, 1.0
       ]
+    },
+    "Sampler0": {
+      "type": "int",
+      "values": [0]
     }
   }
 }

@@ -53,6 +53,7 @@ public final class GLUniform {
      * @since 0.1.0
      */
     public enum Type {
+        INT(GLDataType.INT, ValueLayout.JAVA_INT),
         VEC4(GLDataType.FLOAT, Vectorn.VEC4F),
         MAT4(GLDataType.FLOAT, Matrixn.MAT4F),
         ;
@@ -76,6 +77,11 @@ public final class GLUniform {
         public MemoryLayout layout() {
             return layout;
         }
+    }
+
+    public void set(int x) {
+        markDirty();
+        data.set(ValueLayout.JAVA_INT, 0, x);
     }
 
     public void set(float x, float y, float z, float w) {
@@ -110,6 +116,7 @@ public final class GLUniform {
         dirty = false;
         if (GLLoader.getExtCapabilities().GL_ARB_separate_shader_objects) {
             switch (type) {
+                case INT -> GL.programUniform1iv(program.id(), location, 1, data);
                 case VEC4 -> GL.programUniform4fv(program.id(), location, 1, data);
                 case MAT4 -> GL.programUniformMatrix4fv(program.id(), location, 1, false, data);
             }
@@ -117,6 +124,7 @@ public final class GLUniform {
             final int currentProgram = GLStateMgr.currentProgram();
             RenderSystem.useProgram(program);
             switch (type) {
+                case INT -> GL.uniform1iv(location, 1, data);
                 case VEC4 -> GL.uniform4fv(location, 1, data);
                 case MAT4 -> GL.uniformMatrix4fv(location, 1, false, data);
             }

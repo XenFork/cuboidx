@@ -29,6 +29,7 @@ import org.overrun.glib.gl.GLLoader;
 import org.overrun.glib.glfw.Callbacks;
 import org.overrun.glib.glfw.GLFW;
 import org.overrun.glib.glfw.GLFWErrorCallback;
+import org.overrun.glib.glfw.GLFWVidMode;
 import org.overrun.glib.util.MemoryStack;
 import org.overrun.glib.util.value.Value2;
 import org.overrun.timer.Timer;
@@ -75,6 +76,14 @@ public final class CuboidX implements Runnable {
             this.height.set(height);
             this.resized.set(true);
         });
+
+        final GLFWVidMode.Value videoMode = GLFW.getVideoMode(GLFW.getPrimaryMonitor());
+        if (videoMode != null) {
+            final Value2.OfInt size = GLFW.getWindowSize(window);
+            GLFW.setWindowPos(window,
+                (videoMode.width() - size.x()) / 2,
+                (videoMode.height() - size.y()) / 2);
+        }
 
         try {
             logger.info("Starting CuboidX");

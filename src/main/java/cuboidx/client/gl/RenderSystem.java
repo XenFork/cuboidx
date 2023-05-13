@@ -18,6 +18,8 @@
 
 package cuboidx.client.gl;
 
+import cuboidx.client.texture.Texture2D;
+
 /**
  * @author squid233
  * @since 0.1.0
@@ -27,8 +29,9 @@ public final class RenderSystem {
         GLStateMgr.useProgram(program);
     }
 
-    public static void useProgram(GLProgram program) {
+    public static GLProgram useProgram(GLProgram program) {
         useProgram(program.id());
+        return program;
     }
 
     public static void bindVertexArray(int array) {
@@ -37,5 +40,13 @@ public final class RenderSystem {
 
     public static void bindArrayBuffer(int buffer) {
         GLStateMgr.bindArrayBuffer(buffer);
+    }
+
+    public static void bindTexture2D(int texture) {
+        GLStateMgr.bindTexture2D(texture);
+    }
+
+    public static void bindTexture2D(Texture2D texture) {
+        bindTexture2D(texture.id());
     }
 }

@@ -51,14 +51,17 @@ public final class GLProgram implements AutoCloseable {
         try (Arena arena = Arena.ofConfined()) {
             final GLProgram program = new GLProgram();
 
-            final JsonObject json = JsonParser.parseString(FileUtil.readString(location.toPath(ResourceLocation.ASSETS) + ".json"))
-                .getAsJsonObject();
+            final JsonObject json = JsonParser.parseString(FileUtil.readString(
+                location.toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".json")
+            ).getAsJsonObject();
 
             final int vsh = compileShader(arena, GL.VERTEX_SHADER, "vertex",
-                FileUtil.readString(ResourceLocation.of(json.get("vertex").getAsString()).toPath(ResourceLocation.ASSETS) + ".vert"));
+                FileUtil.readString(ResourceLocation.of(json.get("vertex").getAsString())
+                    .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".vert"));
             if (vsh < 0) return null;
             final int fsh = compileShader(arena, GL.FRAGMENT_SHADER, "fragment",
-                FileUtil.readString(ResourceLocation.of(json.get("fragment").getAsString()).toPath(ResourceLocation.ASSETS) + ".frag"));
+                FileUtil.readString(ResourceLocation.of(json.get("fragment").getAsString())
+                    .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".frag"));
             if (fsh < 0) return null;
 
             GL.attachShader(program.id(), vsh);
@@ -103,6 +106,7 @@ public final class GLProgram implements AutoCloseable {
         final JsonArray values = json.getAsJsonArray("values");
         final GLUniform uniform = Objects.requireNonNull(createUniform(arena, name, type), "No given uniform '" + name + "' found");
         switch (type) {
+            case INT -> uniform.set(values.get(0).getAsInt());
             case VEC4 -> uniform.set(
                 values.get(0).getAsFloat(),
                 values.get(1).getAsFloat(),

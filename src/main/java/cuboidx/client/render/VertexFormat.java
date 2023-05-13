@@ -32,6 +32,7 @@ import java.util.StringJoiner;
 public final class VertexFormat {
     public static final VertexFormat POSITION = new VertexFormat(0, "Position", 3, GLDataType.FLOAT, false);
     public static final VertexFormat COLOR = new VertexFormat(1, "Color", 4, GLDataType.UNSIGNED_BYTE, true);
+    public static final VertexFormat UV0 = new VertexFormat(2, "UV0", 2, GLDataType.FLOAT, false);
     private final int id;
     private final String name;
     private final int size;

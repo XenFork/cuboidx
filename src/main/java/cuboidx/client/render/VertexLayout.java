@@ -30,6 +30,7 @@ import java.util.List;
  */
 public final class VertexLayout {
     public static final VertexLayout POSITION_COLOR = new VertexLayout(VertexFormat.POSITION, VertexFormat.COLOR);
+    public static final VertexLayout POSITION_COLOR_TEXTURE = new VertexLayout(VertexFormat.POSITION, VertexFormat.COLOR, VertexFormat.UV0);
     private final int stride;
     private final List<VertexFormat> formats;
     private final MemorySegment[] pointers;

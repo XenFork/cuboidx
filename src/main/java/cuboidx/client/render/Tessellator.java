@@ -39,12 +39,13 @@ import java.lang.invoke.VarHandle;
  * @since 0.1.0
  */
 public final class Tessellator {
-    private static final int MAX_INDEX_COUNT = 45000;
+    private static final int MAX_INDEX_COUNT = 30000;
+    private static final VertexLayout VERTEX_LAYOUT = VertexLayout.POSITION_COLOR_TEXTURE;
     private static final SequenceLayout LAYOUT = MemoryLayout.sequenceLayout(
         30000,
-        VertexLayout.POSITION_COLOR.layout()
+        VERTEX_LAYOUT.layout()
     );
-    // Position, Color  x, y, z, r, g, b, a
+    // Position, Color, UV0  x, y, z, r, g, b, a, u, v
     private static final VarHandle px = varHandle(VertexFormat.POSITION, 0);
     private static final VarHandle py = varHandle(VertexFormat.POSITION, 1);
     private static final VarHandle pz = varHandle(VertexFormat.POSITION, 2);
@@ -52,11 +53,14 @@ public final class Tessellator {
     private static final VarHandle cg = varHandle(VertexFormat.COLOR, 1);
     private static final VarHandle cb = varHandle(VertexFormat.COLOR, 2);
     private static final VarHandle ca = varHandle(VertexFormat.COLOR, 3);
+    private static final VarHandle tu = varHandle(VertexFormat.UV0, 0);
+    private static final VarHandle tv = varHandle(VertexFormat.UV0, 1);
     private static Tessellator instance;
     private final MemorySegment data = MemoryUtil.calloc(1, LAYOUT);
     private final MemorySegment indexData = MemoryUtil.calloc(MAX_INDEX_COUNT, ValueLayout.JAVA_INT);
     private float x, y, z;
     private float r, g, b, a;
+    private float u, v;
     private GLDrawMode mode = GLDrawMode.TRIANGLES;
     private boolean autoIndices = true;
     private int vertexCount = 0;
@@ -113,7 +117,7 @@ public final class Tessellator {
         RenderSystem.bindArrayBuffer(vbo);
         if (noVbo) {
             GL.bufferData(GL.ARRAY_BUFFER, data, GL.STREAM_DRAW);
-            VertexLayout.POSITION_COLOR.specifyAttributes();
+            VERTEX_LAYOUT.specifyAttributes();
         } else {
             GL.bufferSubData(GL.ARRAY_BUFFER, 0, LAYOUT.byteOffset(PathElement.sequenceElement(vertexCount)), data);
         }
@@ -165,6 +169,12 @@ public final class Tessellator {
         return this;
     }
 
+    public Tessellator texture(float u, float v) {
+        this.u = u;
+        this.v = v;
+        return this;
+    }
+
     public void emit() {
         if ((vertexCount % mode.vertexCount()) == 0) {
             if (autoIndices) {
@@ -182,6 +192,8 @@ public final class Tessellator {
         cg.set(data, count, MathUtil.denormalize(g));
         cb.set(data, count, MathUtil.denormalize(b));
         ca.set(data, count, MathUtil.denormalize(a));
+        tu.set(data, count, u);
+        tv.set(data, count, v);
         vertexCount++;
     }
 
@@ -189,7 +201,7 @@ public final class Tessellator {
         MemoryUtil.free(data);
         MemoryUtil.free(indexData);
         if (GL.isVertexArray(vao)) GL.deleteVertexArray(vao);
-        if (GL.isBuffer(vao)) GL.deleteBuffer(vao);
-        if (GL.isBuffer(vao)) GL.deleteBuffer(vao);
+        if (GL.isBuffer(vbo)) GL.deleteBuffer(vbo);
+        if (GL.isBuffer(ebo)) GL.deleteBuffer(ebo);
     }
 }
