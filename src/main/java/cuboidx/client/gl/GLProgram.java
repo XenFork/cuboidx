@@ -143,6 +143,26 @@ public final class GLProgram implements AutoCloseable {
         return uniform;
     }
 
+    public GLUniform uniform(String name) {
+        return uniformMap.get(name);
+    }
+
+    public GLUniform projectionMatrix() {
+        return uniform("ProjectionMatrix");
+    }
+
+    public GLUniform modelViewMatrix() {
+        return uniform("ModelViewMatrix");
+    }
+
+    public GLUniform colorModulator() {
+        return uniform("ColorModulator");
+    }
+
+    public GLUniform sampler0() {
+        return uniform("Sampler0");
+    }
+
     public void specifyUniforms() {
         uniformMap.values().forEach(GLUniform::specify);
     }

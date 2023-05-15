@@ -18,12 +18,14 @@
 
 package cuboidx.client.render;
 
+import cuboidx.client.CuboidX;
 import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLProgram;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.client.texture.Texture2D;
 import cuboidx.util.ResourceLocation;
+import org.joml.Vector3d;
 
 import java.util.Objects;
 
@@ -32,9 +34,14 @@ import java.util.Objects;
  * @since 0.1.0
  */
 public final class GameRenderer implements AutoCloseable {
+    private final CuboidX client;
     private GLProgram positionColorProgram,
         positionColorTextureProgram;
     private Texture2D texture2D;
+
+    public GameRenderer(CuboidX client) {
+        this.client = client;
+    }
 
     private static GLProgram loadProgram(String path, VertexLayout layout) {
         return Objects.requireNonNull(GLProgram.load(ResourceLocation.cuboidx(path), layout), "Couldn't load program " + path);
@@ -47,8 +54,24 @@ public final class GameRenderer implements AutoCloseable {
     }
 
     public void render(double partialTick) {
+        RenderSystem.projectionMatrix().setPerspective(
+            (float) Math.toRadians(90.0),
+            (float) client.width() / (float) client.height(),
+            0.05f,
+            1000.0f
+        );
+        client.camera().lerp(partialTick);
+        final Vector3d pos = client.camera().lerpPosition();
+        RenderSystem.viewMatrix().translation(
+            (float) -pos.x(),
+            (float) -pos.y(),
+            (float) -pos.z()
+        );
         final int currentProgram = GLStateMgr.currentProgram();
-        RenderSystem.useProgram(positionColorTextureProgram).specifyUniforms();
+        final GLProgram program = RenderSystem.useProgram(positionColorTextureProgram);
+        program.projectionMatrix().set(RenderSystem.projectionMatrix());
+        program.modelViewMatrix().set(RenderSystem.modelViewMatrix());
+        program.specifyUniforms();
         RenderSystem.bindTexture2D(texture2D);
         final Tessellator t = Tessellator.getInstance();
         t.begin(GLDrawMode.QUADS);

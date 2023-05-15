@@ -19,12 +19,19 @@
 package cuboidx.client.gl;
 
 import cuboidx.client.texture.Texture2D;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
 public final class RenderSystem {
+    private static final Matrix4fStack projectionMatrix = new Matrix4fStack(4);
+    private static final Matrix4fStack viewMatrix = new Matrix4fStack(32);
+    private static final Matrix4fStack modelMatrix = new Matrix4fStack(32);
+    private static final Matrix4f modelViewMatrix = new Matrix4f();
+
     public static void useProgram(int program) {
         GLStateMgr.useProgram(program);
     }
@@ -48,5 +55,21 @@ public final class RenderSystem {
 
     public static void bindTexture2D(Texture2D texture) {
         bindTexture2D(texture.id());
+    }
+
+    public static Matrix4fStack projectionMatrix() {
+        return projectionMatrix;
+    }
+
+    public static Matrix4fStack viewMatrix() {
+        return viewMatrix;
+    }
+
+    public static Matrix4fStack modelMatrix() {
+        return modelMatrix;
+    }
+
+    public static Matrix4f modelViewMatrix() {
+        return viewMatrix.mul(modelMatrix, modelViewMatrix);
     }
 }

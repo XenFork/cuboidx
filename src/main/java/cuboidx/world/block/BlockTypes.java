@@ -27,7 +27,7 @@ import cuboidx.util.ResourceLocation;
 public final class BlockTypes {
     public static final BlockType GRASS_BLOCK = new BlockType.Builder()
         .texture(direction -> ResourceLocation.cuboidx("block/grass_block_top"))
-        .build();
+        .build(ResourceLocation.cuboidx("grass_block"));
 
     private BlockTypes() {
         //no instance

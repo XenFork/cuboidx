@@ -18,8 +18,8 @@
 
 package cuboidx.client;
 
+import cuboidx.client.render.Camera;
 import cuboidx.client.render.GameRenderer;
-import cuboidx.util.Log4jStream;
 import cuboidx.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,6 +37,7 @@ import org.overrun.timer.Timer;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author squid233
@@ -49,16 +50,16 @@ public final class CuboidX implements Runnable {
     private static CuboidX instance;
     private Thread renderThread;
     private MemorySegment window;
-    private GameRenderer gameRenderer;
-    private Timer timer;
-    private Timer clientTimer;
     private final AtomicInteger width = new AtomicInteger();
     private final AtomicInteger height = new AtomicInteger();
     private final AtomicBoolean resized = new AtomicBoolean();
+    private final AtomicLong partialTick = new AtomicLong();
+    private Timer timer;
+    private Timer clientTimer;
+    private GameRenderer gameRenderer;
+    private final Camera camera = new Camera();
 
     private CuboidX() {
-        System.setOut(new Log4jStream(System.out, false));
-        System.setErr(new Log4jStream(System.err, true));
         RuntimeHelper.setApiLogger(logger::error);
         GLFWErrorCallback.createLog(logger::error).set();
         RuntimeHelper.check(GLFW.init(), "Unable to initialize GLFW");
@@ -105,6 +106,7 @@ public final class CuboidX implements Runnable {
                 while (!GLFW.windowShouldClose(window)) {
                     timer.advanceTime();
                     timer.performTicks(this::tick);
+                    partialTick.set(Double.doubleToLongBits(timer.partialTick()));
                     GLFW.pollEvents();
                 }
                 logger.info("Stopping!");
@@ -116,6 +118,9 @@ public final class CuboidX implements Runnable {
             } finally {
                 close();
             }
+        } catch (Exception e) {
+            logger.error(e);
+            renderThread.interrupt();
         } finally {
             Callbacks.free(window);
             GLFW.destroyWindow(window);
@@ -124,11 +129,19 @@ public final class CuboidX implements Runnable {
     }
 
     public void tick() {
+        camera.tick();
+        double xo = 0.0, yo = 0.0, zo = 0.0;
+        if (GLFW.getKey(window, GLFW.KEY_A) == GLFW.PRESS) xo--;
+        if (GLFW.getKey(window, GLFW.KEY_D) == GLFW.PRESS) xo++;
+        if (GLFW.getKey(window, GLFW.KEY_LEFT_SHIFT) == GLFW.PRESS) yo--;
+        if (GLFW.getKey(window, GLFW.KEY_SPACE) == GLFW.PRESS) yo++;
+        if (GLFW.getKey(window, GLFW.KEY_W) == GLFW.PRESS) zo--;
+        if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
+        camera.moveRelative(xo, yo, zo, 0.1);
     }
 
-    public void render(double partialTick) {
-        if (resized.get()) {
-            resized.compareAndSet(true, false);
+    public void clientRender(double partialTick) {
+        if (resized.get() && resized.compareAndSet(true, false)) {
             GL.viewport(0, 0, width.get(), height.get());
         }
         GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
@@ -140,19 +153,19 @@ public final class CuboidX implements Runnable {
         GLFW.makeContextCurrent(window);
         RuntimeHelper.check(GLLoader.loadConfined(true, GLFW::ngetProcAddress) != null, "Failed to load OpenGL");
         GL.clearColor(0.4f, 0.6f, 0.9f, 1.0f);
-        gameRenderer = new GameRenderer();
+        gameRenderer = new GameRenderer(this);
         gameRenderer.init();
         clientTimer = Timer.ofGetter(TPS, GLFW::getTime);
         while (!GLFW.windowShouldClose(window)) {
             clientTimer.advanceTime();
-            render(clientTimer.partialTick());
+            clientRender(partialTick());
             GLFW.swapBuffers(window);
             clientTimer.calcFPS();
         }
-        renderClose();
+        clientClose();
     }
 
-    private void renderClose() {
+    private void clientClose() {
         gameRenderer.close();
     }
 
@@ -161,6 +174,30 @@ public final class CuboidX implements Runnable {
 
     public Thread renderThread() {
         return renderThread;
+    }
+
+    public MemorySegment window() {
+        return window;
+    }
+
+    public int width() {
+        return width.get();
+    }
+
+    public int height() {
+        return height.get();
+    }
+
+    public double partialTick() {
+        return Double.longBitsToDouble(partialTick.get());
+    }
+
+    public GameRenderer gameRenderer() {
+        return gameRenderer;
+    }
+
+    public Camera camera() {
+        return camera;
     }
 
     public static CuboidX getInstance() {

@@ -19,6 +19,7 @@
 package cuboidx.client.main;
 
 import cuboidx.client.CuboidX;
+import cuboidx.util.Log4jStream;
 
 /**
  * @author squid233
@@ -26,6 +27,8 @@ import cuboidx.client.CuboidX;
  */
 public final class Main {
     public static void main(String[] args) {
+        System.setOut(new Log4jStream(System.out, false));
+        System.setErr(new Log4jStream(System.err, true));
         CuboidX.getInstance();
     }
 }

@@ -31,9 +31,12 @@ import java.util.function.Function;
  * @since 0.1.0
  */
 public final /* value */ class BlockType {
-    private final Map<Direction, ResourceLocation> texture; // TODO: Use Function instead of Map cache
+    private final Map<Direction, ResourceLocation> texture; // TODO: Use Function instead of Map cache; use block state model instead of Function
+    private final ResourceLocation identifier;
 
-    private BlockType(Function<Direction, ResourceLocation> texture) {
+    private BlockType(Function<Direction, ResourceLocation> texture,
+                      ResourceLocation identifier) {
+        this.identifier = identifier;
         this.texture = HashMap.newHashMap(6);
         for (int i = 0, c = Direction.COUNT; i < c; i++) {
             final Direction direction = Direction.byId(i);
@@ -53,14 +56,19 @@ public final /* value */ class BlockType {
             return this;
         }
 
-        public BlockType build() {
+        public BlockType build(ResourceLocation identifier) {
             return new BlockType(
-                Objects.requireNonNull(texture, "texture")
+                Objects.requireNonNull(texture, "texture"),
+                identifier
             );
         }
     }
 
     public ResourceLocation texture(Direction direction) {
         return texture.get(direction);
+    }
+
+    public ResourceLocation identifier() {
+        return identifier;
     }
 }
