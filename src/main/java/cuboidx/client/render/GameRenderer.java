@@ -76,10 +76,10 @@ public final class GameRenderer implements AutoCloseable {
         final Tessellator t = Tessellator.getInstance();
         t.begin(GLDrawMode.QUADS);
         t.enableAutoIndices();
-        t.position(-0.5f, 0.5f, 0.0f).color(1, 1, 1, 1).texture(0.0f, 0.0f).emit();
-        t.position(-0.5f, -0.5f, 0.0f).color(1, 1, 1, 1).texture(0.0f, 1.0f).emit();
-        t.position(0.5f, -0.5f, 0.0f).color(1, 1, 1, 1).texture(1.0f, 1.0f).emit();
-        t.position(0.5f, 0.5f, 0.0f).color(1, 1, 1, 1).texture(1.0f, 0.0f).emit();
+        t.vertex(-0.5f, 0.5f, 0.0f).color(1, 1, 1, 1).texture(0.0f, 0.0f).emit();
+        t.vertex(-0.5f, -0.5f, 0.0f).color(1, 1, 1, 1).texture(0.0f, 1.0f).emit();
+        t.vertex(0.5f, -0.5f, 0.0f).color(1, 1, 1, 1).texture(1.0f, 1.0f).emit();
+        t.vertex(0.5f, 0.5f, 0.0f).color(1, 1, 1, 1).texture(1.0f, 0.0f).emit();
         t.end();
         RenderSystem.bindTexture2D(0);
         RenderSystem.useProgram(currentProgram);

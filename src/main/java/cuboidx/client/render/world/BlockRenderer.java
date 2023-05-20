@@ -16,25 +16,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.world.block;
+package cuboidx.client.render.world;
 
-import cuboidx.util.ResourceLocation;
+import cuboidx.client.render.VertexBuilder;
+import cuboidx.util.Direction;
+import cuboidx.world.block.BlockType;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class BlockTypes {
-    public static final BlockType AIR = of(0, "air", new BlockType.Builder().air());
-    public static final BlockType GRASS_BLOCK = of(1, "grass_block", new BlockType.Builder()
-        .texture(direction -> ResourceLocation.cuboidx("block/grass_block_top"))
-    );
-
-    private BlockTypes() {
-        //no instance
+public final class BlockRenderer {
+    public static void renderBlockFace(VertexBuilder builder, BlockType block, int x, int y, int z, Direction face) {
+        builder.color(1f, 1f, 1f, 1f);
+        builder.vertex(x, y, z).texture(0f, 0f).emit();
     }
 
-    private static BlockType of(int rawId, String name, BlockType.Builder builder) {
-        return builder.build(ResourceLocation.cuboidx(name));
+    public static void renderBlock(VertexBuilder builder, BlockType block, int x, int y, int z) {
+        for (Direction direction : Direction.list()) {
+            renderBlockFace(builder, block, x, y, z, direction);
+        }
     }
 }

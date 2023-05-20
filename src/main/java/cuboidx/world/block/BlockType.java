@@ -30,16 +30,18 @@ import java.util.function.Function;
  * @author squid233
  * @since 0.1.0
  */
-public final /* value */ class BlockType {
+public final /* identity */ class BlockType {
+    private final boolean air;
     private final Map<Direction, ResourceLocation> texture; // TODO: Use Function instead of Map cache; use block state model instead of Function
     private final ResourceLocation identifier;
 
-    private BlockType(Function<Direction, ResourceLocation> texture,
+    private BlockType(boolean air,
+                      Function<Direction, ResourceLocation> texture,
                       ResourceLocation identifier) {
+        this.air = air;
         this.identifier = identifier;
         this.texture = HashMap.newHashMap(6);
-        for (int i = 0, c = Direction.COUNT; i < c; i++) {
-            final Direction direction = Direction.byId(i);
+        for (Direction direction : Direction.list()) {
             this.texture.put(direction, texture.apply(direction));
         }
     }
@@ -49,7 +51,13 @@ public final /* value */ class BlockType {
      * @since 0.1.0
      */
     public static final class Builder {
+        private boolean air;
         private Function<Direction, ResourceLocation> texture;
+
+        public Builder air() {
+            this.air = true;
+            return this;
+        }
 
         public Builder texture(Function<Direction, ResourceLocation> texture) {
             this.texture = texture;
@@ -58,10 +66,19 @@ public final /* value */ class BlockType {
 
         public BlockType build(ResourceLocation identifier) {
             return new BlockType(
+                air,
                 Objects.requireNonNull(texture, "texture"),
                 identifier
             );
         }
+
+        public BlockType register(ResourceLocation identifier) {
+            return build(identifier);
+        }
+    }
+
+    public boolean air() {
+        return air;
     }
 
     public ResourceLocation texture(Direction direction) {

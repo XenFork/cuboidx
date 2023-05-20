@@ -31,7 +31,7 @@ import org.overrun.glib.stb.STBImage;
 public class Texture2D implements AutoCloseable {
     private final int id;
 
-    private Texture2D() {
+    protected Texture2D() {
         this.id = GL.genTexture();
     }
 

@@ -16,25 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.world.block;
-
-import cuboidx.util.ResourceLocation;
+package cuboidx.client.texture;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class BlockTypes {
-    public static final BlockType AIR = of(0, "air", new BlockType.Builder().air());
-    public static final BlockType GRASS_BLOCK = of(1, "grass_block", new BlockType.Builder()
-        .texture(direction -> ResourceLocation.cuboidx("block/grass_block_top"))
-    );
-
-    private BlockTypes() {
-        //no instance
-    }
-
-    private static BlockType of(int rawId, String name, BlockType.Builder builder) {
-        return builder.build(ResourceLocation.cuboidx(name));
-    }
+public final class TextureAtlas extends Texture2D {
 }

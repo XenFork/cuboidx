@@ -18,6 +18,8 @@
 
 package cuboidx.util;
 
+import java.util.List;
+
 /**
  * @author squid233
  * @since 0.1.0
@@ -31,6 +33,7 @@ public enum Direction {
     SOUTH(5, 4, 0, 0, 1);
 
     private static final Direction[] VALUES = values();
+    private static final List<Direction> LIST = List.of(VALUES);
     public static final int COUNT = VALUES.length;
     private final int id;
     private final int oppositeId;
@@ -48,6 +51,10 @@ public enum Direction {
 
     public static Direction byId(int id) {
         return VALUES[id];
+    }
+
+    public static List<Direction> list() {
+        return LIST;
     }
 
     public int id() {

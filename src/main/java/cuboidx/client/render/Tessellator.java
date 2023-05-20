@@ -38,7 +38,7 @@ import java.lang.invoke.VarHandle;
  * @author squid233
  * @since 0.1.0
  */
-public final class Tessellator {
+public final class Tessellator implements VertexBuilder {
     private static final int MAX_INDEX_COUNT = 30000;
     private static final VertexLayout VERTEX_LAYOUT = VertexLayout.POSITION_COLOR_TEXTURE;
     private static final SequenceLayout LAYOUT = MemoryLayout.sequenceLayout(
@@ -154,13 +154,15 @@ public final class Tessellator {
         }
     }
 
-    public Tessellator position(float x, float y, float z) {
+    @Override
+    public Tessellator vertex(float x, float y, float z) {
         this.x = x;
         this.y = y;
         this.z = z;
         return this;
     }
 
+    @Override
     public Tessellator color(float r, float g, float b, float a) {
         this.r = r;
         this.g = g;
@@ -169,12 +171,14 @@ public final class Tessellator {
         return this;
     }
 
+    @Override
     public Tessellator texture(float u, float v) {
         this.u = u;
         this.v = v;
         return this;
     }
 
+    @Override
     public void emit() {
         if ((vertexCount % mode.vertexCount()) == 0) {
             if (autoIndices) {

@@ -16,25 +16,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.world.block;
-
-import cuboidx.util.ResourceLocation;
+package cuboidx.client.render;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class BlockTypes {
-    public static final BlockType AIR = of(0, "air", new BlockType.Builder().air());
-    public static final BlockType GRASS_BLOCK = of(1, "grass_block", new BlockType.Builder()
-        .texture(direction -> ResourceLocation.cuboidx("block/grass_block_top"))
-    );
+public interface VertexBuilder {
+    VertexBuilder vertex(float x, float y, float z);
 
-    private BlockTypes() {
-        //no instance
-    }
+    VertexBuilder color(float r, float g, float b, float a);
 
-    private static BlockType of(int rawId, String name, BlockType.Builder builder) {
-        return builder.build(ResourceLocation.cuboidx(name));
-    }
+    VertexBuilder texture(float u, float v);
+
+    void emit();
 }
