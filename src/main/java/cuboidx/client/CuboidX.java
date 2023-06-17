@@ -109,7 +109,7 @@ public final class CuboidX implements Runnable {
 
             BlockTypes.load();
             logger.info("Registered {} blocks", Registries.BLOCK_TYPE.size());
-            world = new World(2, 2, 2);
+            world = new World(32, 32, 32);
 
             timer = Timer.ofGetter(TPS, GLFW::getTime);
 
@@ -155,6 +155,10 @@ public final class CuboidX implements Runnable {
         if (GLFW.getKey(window, GLFW.KEY_SPACE) == GLFW.PRESS) yo++;
         if (GLFW.getKey(window, GLFW.KEY_W) == GLFW.PRESS) zo--;
         if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
+        if (GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS) {
+            xo *= 1.5;
+            zo *= 1.5;
+        }
         camera.moveRelative(xo, yo, zo, 0.1);
     }
 
