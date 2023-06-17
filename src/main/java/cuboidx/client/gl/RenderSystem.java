@@ -22,6 +22,8 @@ import cuboidx.client.texture.Texture2D;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
+import java.util.function.Consumer;
+
 /**
  * @author squid233
  * @since 0.1.0
@@ -41,6 +43,11 @@ public final class RenderSystem {
         return program;
     }
 
+    public static GLProgram useProgram(GLProgram program, Consumer<GLProgram> consumer) {
+        consumer.accept(useProgram(program));
+        return program;
+    }
+
     public static void bindVertexArray(int array) {
         GLStateMgr.bindVertexArray(array);
     }
@@ -55,6 +62,30 @@ public final class RenderSystem {
 
     public static void bindTexture2D(Texture2D texture) {
         bindTexture2D(texture.id());
+    }
+
+    public static void enableDepthTest() {
+        GLStateMgr.enableDepthTest();
+    }
+
+    public static void disableDepthTest() {
+        GLStateMgr.disableDepthTest();
+    }
+
+    public static void depthFunc(int func) {
+        GLStateMgr.depthFunc(func);
+    }
+
+    public static void enableCullFace() {
+        GLStateMgr.enableCullFace();
+    }
+
+    public static void disableCullFace() {
+        GLStateMgr.disableCullFace();
+    }
+
+    public static void cullFace(int mode) {
+        GLStateMgr.cullFace(mode);
     }
 
     public static Matrix4fStack projectionMatrix() {

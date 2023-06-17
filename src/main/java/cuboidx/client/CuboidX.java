@@ -20,7 +20,13 @@ package cuboidx.client;
 
 import cuboidx.client.render.Camera;
 import cuboidx.client.render.GameRenderer;
+import cuboidx.client.render.world.BlockRenderer;
+import cuboidx.client.render.world.WorldRenderer;
+import cuboidx.client.texture.TextureManager;
+import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
+import cuboidx.world.World;
+import cuboidx.world.block.BlockTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.overrun.glib.RuntimeHelper;
@@ -31,7 +37,7 @@ import org.overrun.glib.glfw.GLFW;
 import org.overrun.glib.glfw.GLFWErrorCallback;
 import org.overrun.glib.glfw.GLFWVidMode;
 import org.overrun.glib.util.MemoryStack;
-import org.overrun.glib.util.value.Value2;
+import org.overrun.glib.util.value.Pair;
 import org.overrun.timer.Timer;
 
 import java.lang.foreign.MemorySegment;
@@ -56,8 +62,12 @@ public final class CuboidX implements Runnable {
     private final AtomicLong partialTick = new AtomicLong();
     private Timer timer;
     private Timer clientTimer;
+    private TextureManager textureManager;
     private GameRenderer gameRenderer;
     private final Camera camera = new Camera();
+    private BlockRenderer blockRenderer;
+    private World world;
+    private WorldRenderer worldRenderer;
 
     private CuboidX() {
         RuntimeHelper.setApiLogger(logger::error);
@@ -72,7 +82,7 @@ public final class CuboidX implements Runnable {
             window = GLFW.createWindow(stack, 854, 480, "CuboidX", MemorySegment.NULL, MemorySegment.NULL);
         }
         RuntimeHelper.check(!RuntimeHelper.isNullptr(window), "Failed to create the GLFW window");
-        GLFW.setFramebufferSizeCallback(window, (h /* TODO: _ */, width, height) -> {
+        GLFW.setFramebufferSizeCallback(window, (h /* TODO: _ doesn't support? */, width, height) -> {
             this.width.set(width);
             this.height.set(height);
             this.resized.set(true);
@@ -80,7 +90,7 @@ public final class CuboidX implements Runnable {
 
         final GLFWVidMode.Value videoMode = GLFW.getVideoMode(GLFW.getPrimaryMonitor());
         if (videoMode != null) {
-            final Value2.OfInt size = GLFW.getWindowSize(window);
+            final Pair.OfInt size = GLFW.getWindowSize(window);
             GLFW.setWindowPos(window,
                 (videoMode.width() - size.x()) / 2,
                 (videoMode.height() - size.y()) / 2);
@@ -93,14 +103,22 @@ public final class CuboidX implements Runnable {
                     - {} {}
                     - java {}""", ResourceLocation.DEFAULT_NAMESPACE, VERSION, Runtime.version());
 
-            final Value2.OfInt size = GLFW.getFramebufferSize(window);
+            final Pair.OfInt size = GLFW.getFramebufferSize(window);
             width.set(size.x());
             height.set(size.y());
+
+            BlockTypes.load();
+            logger.info("Registered {} blocks", Registries.BLOCK_TYPE.size());
+            world = new World(2, 2, 2);
 
             timer = Timer.ofGetter(TPS, GLFW::getTime);
 
             GLFW.showWindow(window);
-            renderThread = new Thread(this, "RenderThread");
+            renderThread = new Thread(this, "Render thread");
+            renderThread.setUncaughtExceptionHandler((t, e) -> {
+                logger.error("Exception thrown in render thread", e);
+                GLFW.setWindowShouldClose(window, true);
+            });
             renderThread.start();
             try {
                 while (!GLFW.windowShouldClose(window)) {
@@ -153,8 +171,12 @@ public final class CuboidX implements Runnable {
         GLFW.makeContextCurrent(window);
         RuntimeHelper.check(GLLoader.loadConfined(true, GLFW::ngetProcAddress) != null, "Failed to load OpenGL");
         GL.clearColor(0.4f, 0.6f, 0.9f, 1.0f);
+        textureManager = new TextureManager();
         gameRenderer = new GameRenderer(this);
         gameRenderer.init();
+        blockRenderer = new BlockRenderer(this);
+        worldRenderer = new WorldRenderer(this, world);
+
         clientTimer = Timer.ofGetter(TPS, GLFW::getTime);
         while (!GLFW.windowShouldClose(window)) {
             clientTimer.advanceTime();
@@ -167,6 +189,7 @@ public final class CuboidX implements Runnable {
 
     private void clientClose() {
         gameRenderer.close();
+        textureManager.close();
     }
 
     private void close() {
@@ -192,12 +215,28 @@ public final class CuboidX implements Runnable {
         return Double.longBitsToDouble(partialTick.get());
     }
 
+    public TextureManager textureManager() {
+        return textureManager;
+    }
+
     public GameRenderer gameRenderer() {
         return gameRenderer;
     }
 
     public Camera camera() {
         return camera;
+    }
+
+    public BlockRenderer blockRenderer() {
+        return blockRenderer;
+    }
+
+    public World world() {
+        return world;
+    }
+
+    public WorldRenderer worldRenderer() {
+        return worldRenderer;
     }
 
     public static CuboidX getInstance() {

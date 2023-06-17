@@ -18,7 +18,8 @@
 
 package cuboidx.world.block;
 
-import cuboidx.util.Direction;
+import cuboidx.registry.Registries;
+import cuboidx.util.math.Direction;
 import cuboidx.util.ResourceLocation;
 
 import java.util.HashMap;
@@ -33,16 +34,17 @@ import java.util.function.Function;
 public final /* identity */ class BlockType {
     private final boolean air;
     private final Map<Direction, ResourceLocation> texture; // TODO: Use Function instead of Map cache; use block state model instead of Function
-    private final ResourceLocation identifier;
 
     private BlockType(boolean air,
-                      Function<Direction, ResourceLocation> texture,
-                      ResourceLocation identifier) {
+                      Function<Direction, ResourceLocation> texture) {
         this.air = air;
-        this.identifier = identifier;
-        this.texture = HashMap.newHashMap(6);
-        for (Direction direction : Direction.list()) {
-            this.texture.put(direction, texture.apply(direction));
+        if (air) {
+            this.texture = Map.of();
+        } else {
+            this.texture = HashMap.newHashMap(6);
+            for (Direction direction : Direction.list()) {
+                this.texture.put(direction, texture.apply(direction));
+            }
         }
     }
 
@@ -64,16 +66,15 @@ public final /* identity */ class BlockType {
             return this;
         }
 
-        public BlockType build(ResourceLocation identifier) {
+        public BlockType build() {
             return new BlockType(
                 air,
-                Objects.requireNonNull(texture, "texture"),
-                identifier
+                air ? null : Objects.requireNonNull(texture, "texture")
             );
         }
 
         public BlockType register(ResourceLocation identifier) {
-            return build(identifier);
+            return Registries.register(Registries.BLOCK_TYPE, identifier, build());
         }
     }
 
@@ -83,9 +84,5 @@ public final /* identity */ class BlockType {
 
     public ResourceLocation texture(Direction direction) {
         return texture.get(direction);
-    }
-
-    public ResourceLocation identifier() {
-        return identifier;
     }
 }

@@ -36,6 +36,12 @@ public final class World {
         this.height = height;
         this.depth = depth;
         this.blocks = new BlockType[width * height * depth];
+        for (int x = 0; x < width; x++) {
+            for (int z = 0; z < depth; z++) {
+                setBlock(x, 0, z, BlockTypes.DIRT);
+                setBlock(x, 1, z, BlockTypes.GRASS_BLOCK);
+            }
+        }
     }
 
     public boolean isInBound(int x, int y, int z) {

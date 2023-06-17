@@ -21,7 +21,7 @@ package cuboidx.client.render;
 import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
-import cuboidx.util.MathUtil;
+import cuboidx.util.math.MathUtil;
 import org.overrun.glib.gl.GL;
 import org.overrun.glib.util.MemoryUtil;
 

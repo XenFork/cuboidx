@@ -21,12 +21,16 @@ package cuboidx.client.texture;
 import cuboidx.util.FileUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.overrun.binpacking.PackerFitPos;
+import org.overrun.binpacking.PackerRegion;
 import org.overrun.glib.stb.STBImage;
 import org.overrun.glib.util.MemoryStack;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.Optional;
 
 /**
  * @author squid233
@@ -36,6 +40,67 @@ public /* value */ record NativeImage(int width, int height, MemorySegment data,
     implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
     private static NativeImage failImage;
+
+    /**
+     * @param <T> the type of the userdata.
+     * @author squid233
+     * @since 0.1.0
+     */
+    public static final class Region<T> implements PackerRegion<T> {
+        private final NativeImage image;
+        private final T userdata;
+        private @Nullable PackerFitPos fit;
+
+        private Region(NativeImage image, T userdata) {
+            this.image = image;
+            this.userdata = userdata;
+        }
+
+        @Override
+        public int width() {
+            return image.width();
+        }
+
+        @Override
+        public int height() {
+            return image.height();
+        }
+
+        @Override
+        public void setFit(PackerFitPos fit) {
+            this.fit = fit;
+        }
+
+        @Override
+        public Optional<PackerFitPos> fit() {
+            return Optional.ofNullable(fit);
+        }
+
+        @Override
+        public T userdata() {
+            return userdata;
+        }
+
+        public NativeImage image() {
+            return image;
+        }
+
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+        @Override
+        public boolean equals(Object o) {
+            return regionEquals(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return regionHashCode();
+        }
+
+        @Override
+        public String toString() {
+            return regionToString(Region.class.getSimpleName());
+        }
+    }
 
     public static NativeImage fail() {
         if (failImage == null) {
@@ -58,7 +123,7 @@ public /* value */ record NativeImage(int width, int height, MemorySegment data,
 
     public static NativeImage load(String path, int channels) {
         final MemorySegment segment = FileUtil.readBinary(path, 8192);
-        if (segment == null) return null;
+        if (segment == null) return fail();
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final MemorySegment px = stack.calloc(ValueLayout.JAVA_INT);
             final MemorySegment py = stack.calloc(ValueLayout.JAVA_INT);
@@ -76,6 +141,14 @@ public /* value */ record NativeImage(int width, int height, MemorySegment data,
                 channels
             );
         }
+    }
+
+    public <T> Region<T> toRegion(T userdata) {
+        return new Region<>(this, userdata);
+    }
+
+    public Region<?> toRegion() {
+        return toRegion(null);
     }
 
     @Override

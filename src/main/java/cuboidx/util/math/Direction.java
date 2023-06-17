@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.util;
+package cuboidx.util.math;
 
 import java.util.List;
 

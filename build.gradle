@@ -19,9 +19,11 @@ switch (OperatingSystem.current()) {
         break
     case OperatingSystem.WINDOWS:
         def osArch = System.getProperty("os.arch")
-        project.ext.overrunglNatives = osArch.contains("64")
-            ? "natives-windows${osArch.startsWith("aarch64") ? "-arm64" : ""}"
-            : "natives-windows-x86"
+        if (osArch.contains("64")) {
+            project.ext.overrunglNatives = "natives-windows${osArch.startsWith("aarch64") ? "-arm64" : ""}"
+        } else {
+            throw new RuntimeException("Doesn't support to windows-x86")
+        }
         break
 }
 
@@ -39,7 +41,7 @@ repositories {
 
 dependencies {
     implementation "com.google.code.gson:gson:2.10.1"
-    implementation "io.github.over-run:bin-packing:0.2.0"
+    implementation "io.github.over-run:bin-packing:0.4.0"
     implementation "io.github.over-run:bin-tag:0.1.0"
     implementation "io.github.over-run:timer:0.2.0"
     implementation "io.github.over-run:unifont:15.0.01.2"

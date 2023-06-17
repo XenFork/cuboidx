@@ -16,14 +16,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.util;
+package cuboidx.registry;
+
+import cuboidx.util.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class MathUtil {
-    public static byte denormalize(float f) {
-        return (byte) ((int) Math.min(Math.floor(f * 256f), 255));
+public record RegistryKey(@Nullable RegistryKey parent, ResourceLocation location) {
+    public static final RegistryKey ROOT = new RegistryKey(null, ResourceLocation.cuboidx("root"));
+
+    /**
+     * Creates a child registry key.
+     *
+     * @param location the location of the child key.
+     * @return the registry key.
+     */
+    public RegistryKey child(ResourceLocation location) {
+        return new RegistryKey(this, location);
+    }
+
+    @Override
+    public String toString() {
+        return "{" + parent() + ", " + location() + "}";
     }
 }

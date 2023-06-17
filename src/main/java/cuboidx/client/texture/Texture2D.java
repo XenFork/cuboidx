@@ -20,6 +20,7 @@ package cuboidx.client.texture;
 
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
+import cuboidx.util.math.MathUtil;
 import cuboidx.util.ResourceLocation;
 import org.overrun.glib.gl.GL;
 import org.overrun.glib.stb.STBImage;
@@ -30,19 +31,35 @@ import org.overrun.glib.stb.STBImage;
  */
 public class Texture2D implements AutoCloseable {
     private final int id;
+    private final int width;
+    private final int height;
 
-    protected Texture2D() {
+    protected Texture2D(int width, int height) {
         this.id = GL.genTexture();
+        this.width = width;
+        this.height = height;
+    }
+
+    public static int computeMipmapLevel(int i) {
+        if (i <= 0) return 0;
+        int lvl = 0;
+        while (MathUtil.isEven(i)) {
+            i /= 2;
+            lvl++;
+        }
+        return lvl;
+    }
+
+    public static int computeMipmapLevel(int w, int h) {
+        return computeMipmapLevel(Math.min(w, h));
     }
 
     public static Texture2D load(ResourceLocation location) {
-        final Texture2D texture = new Texture2D();
-        final int textureBinding2D = GLStateMgr.textureBinding2D();
-        RenderSystem.bindTexture2D(texture);
-        GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST_MIPMAP_NEAREST);
-        GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
-        GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAX_LEVEL, 4);
-        try (NativeImage image = NativeImage.load(location.toPath(ResourceLocation.ASSETS, ResourceLocation.TEXTURE) + ".png")) {
+        return load(location, STBImage.RGB_ALPHA);
+    }
+
+    public static Texture2D load(ResourceLocation location, int channels) {
+        try (NativeImage image = NativeImage.load(location.toPath(ResourceLocation.ASSETS, ResourceLocation.TEXTURE) + ".png", channels)) {
             final int format = switch (image.format()) {
                 case STBImage.GREY -> GL.RED;
                 case STBImage.GREY_ALPHA -> GL.RG;
@@ -50,24 +67,41 @@ public class Texture2D implements AutoCloseable {
                 case STBImage.RGB_ALPHA -> GL.RGBA;
                 default -> throw new IllegalStateException("Unexpected value: " + image.format());
             };
+            final int width = image.width();
+            final int height = image.height();
+            final int lvl = computeMipmapLevel(width, height);
+            final Texture2D texture = new Texture2D(width, height);
+            final int textureBinding2D = GLStateMgr.textureBinding2D();
+            RenderSystem.bindTexture2D(texture);
+            GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST_MIPMAP_NEAREST);
+            GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
+            GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAX_LEVEL, lvl);
             GL.texImage2D(GL.TEXTURE_2D,
                 0,
                 format,
-                image.width(),
-                image.height(),
+                width,
+                height,
                 0,
                 format,
                 GL.UNSIGNED_BYTE,
                 image.data()
             );
+            if (lvl > 0) GL.generateMipmap(GL.TEXTURE_2D);
+            RenderSystem.bindTexture2D(textureBinding2D);
+            return texture;
         }
-        GL.generateMipmap(GL.TEXTURE_2D);
-        RenderSystem.bindTexture2D(textureBinding2D);
-        return texture;
     }
 
     public int id() {
         return id;
+    }
+
+    public int width() {
+        return width;
+    }
+
+    public int height() {
+        return height;
     }
 
     @Override

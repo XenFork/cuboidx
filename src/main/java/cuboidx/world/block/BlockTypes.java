@@ -18,6 +18,7 @@
 
 package cuboidx.world.block;
 
+import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
 
 /**
@@ -27,14 +28,24 @@ import cuboidx.util.ResourceLocation;
 public final class BlockTypes {
     public static final BlockType AIR = of(0, "air", new BlockType.Builder().air());
     public static final BlockType GRASS_BLOCK = of(1, "grass_block", new BlockType.Builder()
-        .texture(direction -> ResourceLocation.cuboidx("block/grass_block_top"))
+        .texture(direction -> switch (direction) {
+            case WEST, EAST, NORTH, SOUTH -> ResourceLocation.cuboidx("block/grass_block_side");
+            case DOWN -> ResourceLocation.cuboidx("block/dirt");
+            case UP -> ResourceLocation.cuboidx("block/grass_block_top");
+        })
+    );
+    public static final BlockType DIRT = of(2, "dirt", new BlockType.Builder()
+        .texture(direction -> ResourceLocation.cuboidx("block/dirt"))
     );
 
     private BlockTypes() {
         //no instance
     }
 
+    public static void load() {
+    }
+
     private static BlockType of(int rawId, String name, BlockType.Builder builder) {
-        return builder.build(ResourceLocation.cuboidx(name));
+        return Registries.BLOCK_TYPE.set(rawId, ResourceLocation.cuboidx(name), builder.build());
     }
 }

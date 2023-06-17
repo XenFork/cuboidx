@@ -20,6 +20,7 @@ package cuboidx.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -40,14 +41,17 @@ public final class FileUtil {
     private static final Logger logger = LogManager.getLogger();
     private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
+    @Nullable
     public static String readString(String path) {
         return readString(STACK_WALKER.getCallerClass(), path);
     }
 
+    @Nullable
     public static String readString(Class<?> cls, String path) {
         return readString(cls.getClassLoader(), path);
     }
 
+    @Nullable
     public static String readString(ClassLoader classLoader, String path) {
         try (BufferedReader reader = new BufferedReader(
             new InputStreamReader(Objects.requireNonNull(classLoader.getResourceAsStream(path)))
@@ -67,14 +71,17 @@ public final class FileUtil {
         }
     }
 
+    @Nullable
     public static MemorySegment readBinary(String path, int bufferSize) {
         return readBinary(STACK_WALKER.getCallerClass(), path, bufferSize);
     }
 
+    @Nullable
     public static MemorySegment readBinary(Class<?> cls, String path, int bufferSize) {
         return readBinary(cls.getClassLoader(), path, bufferSize);
     }
 
+    @Nullable
     public static MemorySegment readBinary(ClassLoader classLoader, String path, int bufferSize) {
         final boolean isHttp = path.startsWith("http");
         final Path filePath = isHttp ? null : Path.of(path);

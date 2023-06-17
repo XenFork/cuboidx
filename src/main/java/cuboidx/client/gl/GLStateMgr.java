@@ -29,6 +29,10 @@ public final class GLStateMgr {
     private static int vertexArrayBinding = 0;
     private static int arrayBufferBinding = 0;
     private static int textureBinding2D = 0;
+    private static boolean depthTestEnabled = false;
+    private static int depthFunc = GL.LESS;
+    private static boolean cullFaceEnabled = false;
+    private static int cullFaceMode = GL.BACK;
 
     public static void useProgram(int program) {
         if (currentProgram != program) {
@@ -72,5 +76,63 @@ public final class GLStateMgr {
 
     public static int textureBinding2D() {
         return textureBinding2D;
+    }
+
+    public static void enableDepthTest() {
+        if (!depthTestEnabled) {
+            depthTestEnabled = true;
+            GL.enable(GL.DEPTH_TEST);
+        }
+    }
+
+    public static void disableDepthTest() {
+        if (depthTestEnabled) {
+            depthTestEnabled = false;
+            GL.disable(GL.DEPTH_TEST);
+        }
+    }
+
+    public static boolean depthTestEnabled() {
+        return depthTestEnabled;
+    }
+
+    public static void depthFunc(int func) {
+        if (depthFunc != func) {
+            depthFunc = func;
+            GL.depthFunc(func);
+        }
+    }
+
+    public static int depthFunc() {
+        return depthFunc;
+    }
+
+    public static void enableCullFace() {
+        if (!cullFaceEnabled) {
+            cullFaceEnabled = true;
+            GL.enable(GL.CULL_FACE);
+        }
+    }
+
+    public static void disableCullFace() {
+        if (cullFaceEnabled) {
+            cullFaceEnabled = false;
+            GL.disable(GL.CULL_FACE);
+        }
+    }
+
+    public static boolean cullFaceEnabled() {
+        return cullFaceEnabled;
+    }
+
+    public static void cullFace(int mode) {
+        if (cullFaceMode != mode) {
+            cullFaceMode = mode;
+            GL.cullFace(mode);
+        }
+    }
+
+    public static int cullFaceMode() {
+        return cullFaceMode;
     }
 }

@@ -19,25 +19,28 @@
 package cuboidx.client.render;
 
 import cuboidx.client.CuboidX;
-import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLProgram;
-import cuboidx.client.gl.GLStateMgr;
-import cuboidx.client.gl.RenderSystem;
-import cuboidx.client.texture.Texture2D;
+import cuboidx.client.render.world.WorldRenderer;
+import cuboidx.client.texture.TextureAtlas;
+import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
-import org.joml.Vector3d;
+import cuboidx.util.math.Direction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
 public final class GameRenderer implements AutoCloseable {
+    private static final Logger logger = LogManager.getLogger();
     private final CuboidX client;
     private GLProgram positionColorProgram,
         positionColorTextureProgram;
-    private Texture2D texture2D;
 
     public GameRenderer(CuboidX client) {
         this.client = client;
@@ -50,39 +53,19 @@ public final class GameRenderer implements AutoCloseable {
     public void init() {
         positionColorProgram = loadProgram("core/position_color", VertexLayout.POSITION_COLOR);
         positionColorTextureProgram = loadProgram("core/position_color_texture", VertexLayout.POSITION_COLOR_TEXTURE);
-        texture2D = Texture2D.load(ResourceLocation.cuboidx("block/grass_block_top"));
+        final Set<ResourceLocation> textures = new HashSet<>();
+        for (var e : Registries.BLOCK_TYPE) {
+            for (Direction direction : Direction.list()) {
+                final ResourceLocation texture = e.getValue().texture(direction);
+                if (texture != null)
+                    textures.add(texture);
+            }
+        }
+        client.textureManager().add(WorldRenderer.BLOCK_ATLAS, TextureAtlas.load(textures));
     }
 
     public void render(double partialTick) {
-        RenderSystem.projectionMatrix().setPerspective(
-            (float) Math.toRadians(90.0),
-            (float) client.width() / (float) client.height(),
-            0.05f,
-            1000.0f
-        );
-        client.camera().lerp(partialTick);
-        final Vector3d pos = client.camera().lerpPosition();
-        RenderSystem.viewMatrix().translation(
-            (float) -pos.x(),
-            (float) -pos.y(),
-            (float) -pos.z()
-        );
-        final int currentProgram = GLStateMgr.currentProgram();
-        final GLProgram program = RenderSystem.useProgram(positionColorTextureProgram);
-        program.projectionMatrix().set(RenderSystem.projectionMatrix());
-        program.modelViewMatrix().set(RenderSystem.modelViewMatrix());
-        program.specifyUniforms();
-        RenderSystem.bindTexture2D(texture2D);
-        final Tessellator t = Tessellator.getInstance();
-        t.begin(GLDrawMode.QUADS);
-        t.enableAutoIndices();
-        t.vertex(-0.5f, 0.5f, 0.0f).color(1, 1, 1, 1).texture(0.0f, 0.0f).emit();
-        t.vertex(-0.5f, -0.5f, 0.0f).color(1, 1, 1, 1).texture(0.0f, 1.0f).emit();
-        t.vertex(0.5f, -0.5f, 0.0f).color(1, 1, 1, 1).texture(1.0f, 1.0f).emit();
-        t.vertex(0.5f, 0.5f, 0.0f).color(1, 1, 1, 1).texture(1.0f, 0.0f).emit();
-        t.end();
-        RenderSystem.bindTexture2D(0);
-        RenderSystem.useProgram(currentProgram);
+        client.worldRenderer().renderChunks(partialTick);
     }
 
     public GLProgram positionColorProgram() {
@@ -97,7 +80,7 @@ public final class GameRenderer implements AutoCloseable {
     public void close() {
         if (positionColorProgram != null) positionColorProgram.close();
         if (positionColorTextureProgram != null) positionColorTextureProgram.close();
-        if (texture2D != null) texture2D.close();
         Tessellator.free();
+        logger.info("Cleaned up GameRenderer");
     }
 }
