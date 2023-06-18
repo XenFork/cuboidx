@@ -19,7 +19,7 @@
 package cuboidx.client.render;
 
 import org.jetbrains.annotations.Unmodifiable;
-import org.overrun.glib.gl.GL;
+import org.overrun.gl.opengl.GL;
 
 import java.lang.foreign.*;
 import java.util.List;
@@ -28,7 +28,7 @@ import java.util.List;
  * @author squid233
  * @since 0.1.0
  */
-public final class VertexLayout {
+public final /* value */ class VertexLayout {
     public static final VertexLayout POSITION_COLOR = new VertexLayout(VertexFormat.POSITION, VertexFormat.COLOR);
     public static final VertexLayout POSITION_COLOR_TEXTURE = new VertexLayout(VertexFormat.POSITION, VertexFormat.COLOR, VertexFormat.UV0);
     private final int stride;

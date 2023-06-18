@@ -61,7 +61,10 @@ public final class GameRenderer implements AutoCloseable {
                     textures.add(texture);
             }
         }
-        client.textureManager().add(WorldRenderer.BLOCK_ATLAS, TextureAtlas.load(textures));
+        // TODO: 2023/6/17 load texture atlas asynchronously
+        final TextureAtlas atlas = TextureAtlas.load(textures);
+        client.textureManager().add(WorldRenderer.BLOCK_ATLAS, atlas);
+        logger.info("Created: {}x{}x{} {}", atlas.width(), atlas.height(), atlas.mipmapLevel(), WorldRenderer.BLOCK_ATLAS);
     }
 
     public void render(double partialTick) {

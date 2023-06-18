@@ -18,15 +18,9 @@
 
 package cuboidx.client.render.world;
 
-import cuboidx.world.World;
-import cuboidx.world.chunk.Chunk;
-
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class ClientChunk extends Chunk {
-    public ClientChunk(World world, int x0, int y0, int z0, int x1, int y1, int z1) {
-        super(world, x0, y0, z0, x1, y1, z1);
-    }
+public final class ChunkCompiler  {
 }

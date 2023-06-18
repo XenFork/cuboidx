@@ -29,15 +29,15 @@ import cuboidx.world.World;
 import cuboidx.world.block.BlockTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.overrun.glib.RuntimeHelper;
-import org.overrun.glib.gl.GL;
-import org.overrun.glib.gl.GLLoader;
-import org.overrun.glib.glfw.Callbacks;
-import org.overrun.glib.glfw.GLFW;
-import org.overrun.glib.glfw.GLFWErrorCallback;
-import org.overrun.glib.glfw.GLFWVidMode;
-import org.overrun.glib.util.MemoryStack;
-import org.overrun.glib.util.value.Pair;
+import org.overrun.gl.RuntimeHelper;
+import org.overrun.gl.opengl.GL;
+import org.overrun.gl.opengl.GLLoader;
+import org.overrun.gl.glfw.Callbacks;
+import org.overrun.gl.glfw.GLFW;
+import org.overrun.gl.glfw.GLFWErrorCallback;
+import org.overrun.gl.glfw.GLFWVidMode;
+import org.overrun.gl.util.MemoryStack;
+import org.overrun.gl.util.value.Pair;
 import org.overrun.timer.Timer;
 
 import java.lang.foreign.MemorySegment;
@@ -79,7 +79,7 @@ public final class CuboidX implements Runnable {
         GLFW.windowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_COMPAT_PROFILE);
         GLFW.windowHint(GLFW.OPENGL_FORWARD_COMPAT, true);
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            window = GLFW.createWindow(stack, 854, 480, "CuboidX", MemorySegment.NULL, MemorySegment.NULL);
+            window = GLFW.createWindow(stack, 854, 480, "CuboidX " + VERSION, MemorySegment.NULL, MemorySegment.NULL);
         }
         RuntimeHelper.check(!RuntimeHelper.isNullptr(window), "Failed to create the GLFW window");
         GLFW.setFramebufferSizeCallback(window, (h /* TODO: _ doesn't support? */, width, height) -> {
@@ -97,7 +97,7 @@ public final class CuboidX implements Runnable {
         }
 
         try {
-            logger.info("Starting CuboidX");
+            logger.info("Starting CuboidX {}", VERSION);
             logger.info("""
                 Detected 2 mods:
                     - {} {}
@@ -194,6 +194,7 @@ public final class CuboidX implements Runnable {
     private void clientClose() {
         gameRenderer.close();
         textureManager.close();
+        worldRenderer.close();
     }
 
     private void close() {

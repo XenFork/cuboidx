@@ -16,17 +16,33 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.client.render.world;
+package cuboidx.world.chunk;
 
 import cuboidx.world.World;
-import cuboidx.world.chunk.Chunk;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class ClientChunk extends Chunk {
-    public ClientChunk(World world, int x0, int y0, int z0, int x1, int y1, int z1) {
-        super(world, x0, y0, z0, x1, y1, z1);
+public class Chunk {
+    public static final int SIZE = 32;
+    private final World world;
+    protected int x0, y0, z0;
+    protected int x1, y1, z1;
+
+    public Chunk(World world,
+                 int x0, int y0, int z0,
+                 int x1, int y1, int z1) {
+        this.world = world;
+        this.x0 = x0;
+        this.y0 = y0;
+        this.z0 = z0;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.z1 = z1;
+    }
+
+    public World world() {
+        return world;
     }
 }

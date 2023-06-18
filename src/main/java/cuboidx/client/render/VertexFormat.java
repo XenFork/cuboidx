@@ -29,7 +29,7 @@ import java.util.StringJoiner;
  * @author squid233
  * @since 0.1.0
  */
-public final class VertexFormat {
+public final /* value */ class VertexFormat {
     public static final VertexFormat POSITION = new VertexFormat(0, "Position", 3, GLDataType.FLOAT, false);
     public static final VertexFormat COLOR = new VertexFormat(1, "Color", 4, GLDataType.UNSIGNED_BYTE, true);
     public static final VertexFormat UV0 = new VertexFormat(2, "UV0", 2, GLDataType.FLOAT, false);

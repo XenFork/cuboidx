@@ -20,10 +20,10 @@ package cuboidx.client.gl;
 
 import org.joml.Matrix4fc;
 import org.joml.Vector4fc;
-import org.overrun.glib.gl.GL;
-import org.overrun.glib.gl.GLLoader;
-import org.overrun.glib.joml.Matrixn;
-import org.overrun.glib.joml.Vectorn;
+import org.overrun.gl.opengl.GL;
+import org.overrun.gl.opengl.GLLoader;
+import org.overrun.gl.joml.Matrixn;
+import org.overrun.gl.joml.Vectorn;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;

@@ -22,8 +22,8 @@ import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.util.math.MathUtil;
-import org.overrun.glib.gl.GL;
-import org.overrun.glib.util.MemoryUtil;
+import org.overrun.gl.opengl.GL;
+import org.overrun.gl.util.MemoryUtil;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemoryLayout.PathElement;

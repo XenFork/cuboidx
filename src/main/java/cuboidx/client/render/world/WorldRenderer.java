@@ -25,21 +25,56 @@ import cuboidx.client.gl.RenderSystem;
 import cuboidx.client.render.Tessellator;
 import cuboidx.util.ResourceLocation;
 import cuboidx.world.World;
+import cuboidx.world.chunk.Chunk;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joml.Vector3d;
-import org.overrun.glib.gl.GL;
+import org.overrun.gl.opengl.GL;
 
 /**
+ * The world renderer renders the world in {@link cuboidx.world.chunk.Chunk chunks}.
+ * <p>
+ * Each chunk is compiled in certain {@link RenderLayer layers}.<br>
+ * The world renderer first renders opaque blocks, then renders translucent blocks from far to near.
+ * <p>
+ * Chunks outside the view of the player are not rendered.
+ * <p>
+ * Chunks are compiled in multi-thread: the player modifies the world,
+ * and the {@link ChunkCompiler compiler} receives the modification.<br>
+ * A compilation is discarded if the player modified the world when the compiler is compiling.
+ *
  * @author squid233
  * @since 0.1.0
  */
-public final class WorldRenderer {
+public final class WorldRenderer implements AutoCloseable {
+    private static final Logger logger = LogManager.getLogger();
     public static final ResourceLocation BLOCK_ATLAS = ResourceLocation.cuboidx("block-atlas");
     private final CuboidX client;
     private final World world;
+    private final int xChunks, yChunks, zChunks;
+    private final ClientChunk[] chunks;
 
     public WorldRenderer(CuboidX client, World world) {
         this.client = client;
         this.world = world;
+        this.xChunks = Math.ceilDiv(world.width(), Chunk.SIZE);
+        this.yChunks = Math.ceilDiv(world.height(), Chunk.SIZE);
+        this.zChunks = Math.ceilDiv(world.depth(), Chunk.SIZE);
+        this.chunks = new ClientChunk[xChunks * yChunks * zChunks];
+        for (int x = 0; x < xChunks; x++) {
+            for (int y = 0; y < yChunks; y++) {
+                for (int z = 0; z < zChunks; z++) {
+                    this.chunks[xChunks * (y * zChunks + z) + x] = new ClientChunk(world,
+                        x * Chunk.SIZE,
+                        y * Chunk.SIZE,
+                        z * Chunk.SIZE,
+                        Math.min((x + 1) * Chunk.SIZE, world.width()),
+                        Math.min((y + 1) * Chunk.SIZE, world.height()),
+                        Math.min((z + 1) * Chunk.SIZE, world.depth())
+                    );
+                }
+            }
+        }
     }
 
     public void compileChunks() {
@@ -91,5 +126,10 @@ public final class WorldRenderer {
 
         RenderSystem.disableCullFace();
         RenderSystem.disableDepthTest();
+    }
+
+    @Override
+    public void close() {
+        logger.info("Cleaned up WorldRenderer");
     }
 }

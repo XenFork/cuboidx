@@ -22,8 +22,8 @@ import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.util.math.MathUtil;
 import cuboidx.util.ResourceLocation;
-import org.overrun.glib.gl.GL;
-import org.overrun.glib.stb.STBImage;
+import org.overrun.gl.opengl.GL;
+import org.overrun.gl.stb.STBImage;
 
 /**
  * @author squid233
@@ -33,11 +33,13 @@ public class Texture2D implements AutoCloseable {
     private final int id;
     private final int width;
     private final int height;
+    private final int mipmapLevel;
 
-    protected Texture2D(int width, int height) {
+    protected Texture2D(int width, int height, int mipmapLevel) {
         this.id = GL.genTexture();
         this.width = width;
         this.height = height;
+        this.mipmapLevel = mipmapLevel;
     }
 
     public static int computeMipmapLevel(int i) {
@@ -70,7 +72,7 @@ public class Texture2D implements AutoCloseable {
             final int width = image.width();
             final int height = image.height();
             final int lvl = computeMipmapLevel(width, height);
-            final Texture2D texture = new Texture2D(width, height);
+            final Texture2D texture = new Texture2D(width, height, lvl);
             final int textureBinding2D = GLStateMgr.textureBinding2D();
             RenderSystem.bindTexture2D(texture);
             GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST_MIPMAP_NEAREST);
@@ -102,6 +104,10 @@ public class Texture2D implements AutoCloseable {
 
     public int height() {
         return height;
+    }
+
+    public int mipmapLevel() {
+        return mipmapLevel;
     }
 
     @Override

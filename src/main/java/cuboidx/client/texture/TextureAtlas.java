@@ -24,8 +24,8 @@ import cuboidx.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.overrun.binpacking.*;
-import org.overrun.glib.gl.GL;
-import org.overrun.glib.util.MemoryStack;
+import org.overrun.gl.opengl.GL;
+import org.overrun.gl.util.MemoryStack;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -39,8 +39,8 @@ public final class TextureAtlas extends Texture2D {
     private static final Logger logger = LogManager.getLogger();
     private final Map<ResourceLocation, PackerRegion<?>> map;
 
-    private TextureAtlas(int width, int height, int initialCapacity) {
-        super(width, height);
+    private TextureAtlas(int width, int height, int mipmapLevel, int initialCapacity) {
+        super(width, height, mipmapLevel);
         this.map = HashMap.newHashMap(initialCapacity);
     }
 
@@ -60,33 +60,35 @@ public final class TextureAtlas extends Texture2D {
 
             final int width = packer.width();
             final int height = packer.height();
-            final TextureAtlas atlas = new TextureAtlas(width, height, locations.size());
+            final TextureAtlas atlas;
             final int textureBinding2D = GLStateMgr.textureBinding2D();
-            RenderSystem.bindTexture2D(atlas);
-            GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST_MIPMAP_NEAREST);
-            GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
 
             // compute mipmap level
             final int lvl;
             try (MemoryStack stack = MemoryStack.stackPush()) {
-                final MemorySegment seg = stack.calloc(ValueLayout.JAVA_INT);
+                final MemorySegment seg = stack.ints(-1);
                 regions.forEach(region -> region.ifFitPresent((r, f) -> {
                     final int rw = r.width();
                     final int rh = r.height();
                     final int currLvl = seg.get(ValueLayout.JAVA_INT, 0);
                     final int newLvl = computeMipmapLevel(rw, rh);
-                    if (newLvl < currLvl) {
+                    if (currLvl == -1) {
+                        seg.set(ValueLayout.JAVA_INT, 0, newLvl);
+                    } else if (newLvl < currLvl) {
                         logger.warn("Dropping mipmap level from {} to {}, because of the minimum level of {}x{}: {}",
                             currLvl,
                             newLvl,
                             rw,
                             rh,
                             newLvl);
+                        seg.set(ValueLayout.JAVA_INT, 0, newLvl);
                     }
-                    seg.set(ValueLayout.JAVA_INT, 0, Math.min(currLvl, newLvl));
-                    atlas.map.put(r.userdata(), r);
                 }));
                 lvl = seg.get(ValueLayout.JAVA_INT, 0);
+                atlas = new TextureAtlas(width, height, lvl, locations.size());
+                RenderSystem.bindTexture2D(atlas);
+                GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST_MIPMAP_NEAREST);
+                GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
                 GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAX_LEVEL, lvl);
             }
             // write data
@@ -101,16 +103,19 @@ public final class TextureAtlas extends Texture2D {
                 MemorySegment.NULL
             );
             regions.forEach(region -> region.<NativeImage.Region<ResourceLocation>>ifFitPresent(
-                (r, f) -> GL.texSubImage2D(GL.TEXTURE_2D,
-                    0,
-                    f.x(),
-                    f.y(),
-                    r.width(),
-                    r.height(),
-                    GL.RGBA,
-                    GL.UNSIGNED_BYTE,
-                    r.image().data()
-                )));
+                (r, f) -> {
+                    GL.texSubImage2D(GL.TEXTURE_2D,
+                        0,
+                        f.x(),
+                        f.y(),
+                        r.width(),
+                        r.height(),
+                        GL.RGBA,
+                        GL.UNSIGNED_BYTE,
+                        r.image().data()
+                    );
+                    atlas.map.put(r.userdata(), r);
+                }));
 
             if (lvl > 0) GL.generateMipmap(GL.TEXTURE_2D);
             RenderSystem.bindTexture2D(textureBinding2D);

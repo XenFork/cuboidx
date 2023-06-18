@@ -26,7 +26,7 @@ import cuboidx.util.FileUtil;
 import cuboidx.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.overrun.glib.gl.GL;
+import org.overrun.gl.opengl.GL;
 
 import java.lang.foreign.Arena;
 import java.util.HashMap;
