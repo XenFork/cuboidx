@@ -52,8 +52,16 @@ public final class RenderSystem {
         GLStateMgr.bindVertexArray(array);
     }
 
+    public static void deleteVertexArray(int array) {
+        GLStateMgr.deleteVertexArray(array);
+    }
+
     public static void bindArrayBuffer(int buffer) {
         GLStateMgr.bindArrayBuffer(buffer);
+    }
+
+    public static void deleteArrayBuffer(int buffer) {
+        GLStateMgr.deleteArrayBuffer(buffer);
     }
 
     public static void bindTexture2D(int texture) {

@@ -27,13 +27,18 @@ import cuboidx.world.World;
 public class Chunk {
     public static final int SIZE = 32;
     private final World world;
+    protected int x, y, z;
     protected int x0, y0, z0;
     protected int x1, y1, z1;
 
     public Chunk(World world,
+                 int x, int y, int z,
                  int x0, int y0, int z0,
                  int x1, int y1, int z1) {
         this.world = world;
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.x0 = x0;
         this.y0 = y0;
         this.z0 = z0;

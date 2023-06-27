@@ -56,6 +56,13 @@ public final class GLStateMgr {
         return vertexArrayBinding;
     }
 
+    public static void deleteVertexArray(int array) {
+        if (vertexArrayBinding == array) {
+            vertexArrayBinding = 0;
+        }
+        GL.deleteVertexArray(array);
+    }
+
     public static void bindArrayBuffer(int buffer) {
         if (arrayBufferBinding != buffer) {
             arrayBufferBinding = buffer;
@@ -65,6 +72,13 @@ public final class GLStateMgr {
 
     public static int arrayBufferBinding() {
         return arrayBufferBinding;
+    }
+
+    public static void deleteArrayBuffer(int buffer) {
+        if (arrayBufferBinding == buffer) {
+            arrayBufferBinding = 0;
+        }
+        GL.deleteBuffer(buffer);
     }
 
     public static void bindTexture2D(int texture) {

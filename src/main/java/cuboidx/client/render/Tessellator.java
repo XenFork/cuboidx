@@ -143,6 +143,7 @@ public final class Tessellator implements VertexBuilder {
         autoIndices = false;
     }
 
+    @Override
     public void indices(int... indices) {
         for (int index : indices) {
             if ((indexCount % mode.indexCount()) == 0 &&
@@ -204,8 +205,8 @@ public final class Tessellator implements VertexBuilder {
     private void close() {
         MemoryUtil.free(data);
         MemoryUtil.free(indexData);
-        if (GL.isVertexArray(vao)) GL.deleteVertexArray(vao);
-        if (GL.isBuffer(vbo)) GL.deleteBuffer(vbo);
+        if (GL.isVertexArray(vao)) RenderSystem.deleteVertexArray(vao);
+        if (GL.isBuffer(vbo)) RenderSystem.deleteArrayBuffer(vbo);
         if (GL.isBuffer(ebo)) GL.deleteBuffer(ebo);
     }
 }

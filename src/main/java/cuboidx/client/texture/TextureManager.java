@@ -37,6 +37,10 @@ public final class TextureManager implements AutoCloseable {
         return textureMap.containsKey(location);
     }
 
+    public <T extends Texture2D> T add(T texture) {
+        return add(texture.location(), texture);
+    }
+
     public <T extends Texture2D> T add(ResourceLocation location, T texture) {
         textureMap.put(location, texture);
         return texture;

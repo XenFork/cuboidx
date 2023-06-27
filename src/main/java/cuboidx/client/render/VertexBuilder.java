@@ -23,6 +23,8 @@ package cuboidx.client.render;
  * @since 0.1.0
  */
 public interface VertexBuilder {
+    void indices(int... indices);
+
     VertexBuilder vertex(float x, float y, float z);
 
     VertexBuilder color(float r, float g, float b, float a);

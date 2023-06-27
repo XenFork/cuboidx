@@ -19,11 +19,9 @@
 package cuboidx.client.render.world;
 
 import cuboidx.client.CuboidX;
-import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
-import cuboidx.client.render.Tessellator;
-import cuboidx.util.ResourceLocation;
+import cuboidx.client.texture.TextureAtlas;
 import cuboidx.world.World;
 import cuboidx.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
@@ -48,11 +46,11 @@ import org.overrun.gl.opengl.GL;
  */
 public final class WorldRenderer implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
-    public static final ResourceLocation BLOCK_ATLAS = ResourceLocation.cuboidx("block-atlas");
     private final CuboidX client;
     private final World world;
     private final int xChunks, yChunks, zChunks;
     private final ClientChunk[] chunks;
+    private boolean compiled = false;
 
     public WorldRenderer(CuboidX client, World world) {
         this.client = client;
@@ -64,13 +62,15 @@ public final class WorldRenderer implements AutoCloseable {
         for (int x = 0; x < xChunks; x++) {
             for (int y = 0; y < yChunks; y++) {
                 for (int z = 0; z < zChunks; z++) {
-                    this.chunks[xChunks * (y * zChunks + z) + x] = new ClientChunk(world,
+                    this.chunks[xChunks * (y * zChunks + z) + x] = new ClientChunk(client,
+                        world,
+                        x, y, z,
                         x * Chunk.SIZE,
                         y * Chunk.SIZE,
                         z * Chunk.SIZE,
-                        Math.min((x + 1) * Chunk.SIZE, world.width()),
-                        Math.min((y + 1) * Chunk.SIZE, world.height()),
-                        Math.min((z + 1) * Chunk.SIZE, world.depth())
+                        Math.min((x + 1) * Chunk.SIZE, world.width()) - 1,
+                        Math.min((y + 1) * Chunk.SIZE, world.height()) - 1,
+                        Math.min((z + 1) * Chunk.SIZE, world.depth()) - 1
                     );
                 }
             }
@@ -78,9 +78,19 @@ public final class WorldRenderer implements AutoCloseable {
     }
 
     public void compileChunks() {
+        try (ChunkCompiler compiler = new ChunkCompiler()) {
+            for (ClientChunk chunk : chunks) {
+                chunk.compile(compiler);
+            }
+        }
     }
 
     public void renderChunks(double partialTick) {
+        if (!compiled) {
+            compileChunks();
+            compiled = true;
+        }
+
         // initialize states
         RenderSystem.enableCullFace();
         RenderSystem.enableDepthTest();
@@ -105,20 +115,12 @@ public final class WorldRenderer implements AutoCloseable {
             program.modelViewMatrix().set(RenderSystem.modelViewMatrix());
             program.specifyUniforms();
         });
-        RenderSystem.bindTexture2D(client.textureManager().get(BLOCK_ATLAS));
+        RenderSystem.bindTexture2D(client.textureManager().get(TextureAtlas.BLOCK_ATLAS));
 
         // render
-        final Tessellator t = Tessellator.getInstance();
-        t.begin(GLDrawMode.QUADS);
-        t.enableAutoIndices();
-        for (int x = 0; x < world.width(); x++) {
-            for (int y = 0; y < world.height(); y++) {
-                for (int z = 0; z < world.depth(); z++) {
-                    client.blockRenderer().renderBlock(t, world.getBlock(x, y, z), x, y, z);
-                }
-            }
+        for (ClientChunk chunk : chunks) {
+            chunk.render();
         }
-        t.end();
 
         // reset states
         RenderSystem.bindTexture2D(0);
@@ -130,6 +132,9 @@ public final class WorldRenderer implements AutoCloseable {
 
     @Override
     public void close() {
+        for (ClientChunk chunk : chunks) {
+            chunk.close();
+        }
         logger.info("Cleaned up WorldRenderer");
     }
 }

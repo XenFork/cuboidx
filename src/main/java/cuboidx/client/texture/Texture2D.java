@@ -30,12 +30,14 @@ import org.overrun.gl.stb.STBImage;
  * @since 0.1.0
  */
 public class Texture2D implements AutoCloseable {
+    private final ResourceLocation location;
     private final int id;
     private final int width;
     private final int height;
     private final int mipmapLevel;
 
-    protected Texture2D(int width, int height, int mipmapLevel) {
+    protected Texture2D(ResourceLocation location, int width, int height, int mipmapLevel) {
+        this.location = location;
         this.id = GL.genTexture();
         this.width = width;
         this.height = height;
@@ -72,7 +74,7 @@ public class Texture2D implements AutoCloseable {
             final int width = image.width();
             final int height = image.height();
             final int lvl = computeMipmapLevel(width, height);
-            final Texture2D texture = new Texture2D(width, height, lvl);
+            final Texture2D texture = new Texture2D(location, width, height, lvl);
             final int textureBinding2D = GLStateMgr.textureBinding2D();
             RenderSystem.bindTexture2D(texture);
             GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST_MIPMAP_NEAREST);
@@ -92,6 +94,10 @@ public class Texture2D implements AutoCloseable {
             RenderSystem.bindTexture2D(textureBinding2D);
             return texture;
         }
+    }
+
+    public ResourceLocation location() {
+        return location;
     }
 
     public int id() {

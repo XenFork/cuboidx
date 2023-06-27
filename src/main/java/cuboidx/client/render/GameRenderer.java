@@ -20,7 +20,6 @@ package cuboidx.client.render;
 
 import cuboidx.client.CuboidX;
 import cuboidx.client.gl.GLProgram;
-import cuboidx.client.render.world.WorldRenderer;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
@@ -62,9 +61,9 @@ public final class GameRenderer implements AutoCloseable {
             }
         }
         // TODO: 2023/6/17 load texture atlas asynchronously
-        final TextureAtlas atlas = TextureAtlas.load(textures);
-        client.textureManager().add(WorldRenderer.BLOCK_ATLAS, atlas);
-        logger.info("Created: {}x{}x{} {}", atlas.width(), atlas.height(), atlas.mipmapLevel(), WorldRenderer.BLOCK_ATLAS);
+        final TextureAtlas atlas = TextureAtlas.load(TextureAtlas.BLOCK_ATLAS, textures);
+        client.textureManager().add(atlas);
+        logger.info("Created: {}x{}x{} {}", atlas.width(), atlas.height(), atlas.mipmapLevel(), TextureAtlas.BLOCK_ATLAS);
     }
 
     public void render(double partialTick) {

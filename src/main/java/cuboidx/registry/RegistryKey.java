@@ -25,8 +25,19 @@ import org.jetbrains.annotations.Nullable;
  * @author squid233
  * @since 0.1.0
  */
-public record RegistryKey(@Nullable RegistryKey parent, ResourceLocation location) {
+public record RegistryKey(@Nullable ResourceLocation parent, ResourceLocation location) {
     public static final RegistryKey ROOT = new RegistryKey(null, ResourceLocation.cuboidx("root"));
+
+    /**
+     * Creates a registry key.
+     *
+     * @param parent   the parent registry key.
+     * @param location the location.
+     * @return the registry key.
+     */
+    public static RegistryKey of(RegistryKey parent, ResourceLocation location) {
+        return new RegistryKey(parent.location, location);
+    }
 
     /**
      * Creates a child registry key.
@@ -35,11 +46,11 @@ public record RegistryKey(@Nullable RegistryKey parent, ResourceLocation locatio
      * @return the registry key.
      */
     public RegistryKey child(ResourceLocation location) {
-        return new RegistryKey(this, location);
+        return of(this, location);
     }
 
     @Override
     public String toString() {
-        return "{" + parent() + ", " + location() + "}";
+        return "RegistryKey{" + parent() + "/" + location() + "}";
     }
 }

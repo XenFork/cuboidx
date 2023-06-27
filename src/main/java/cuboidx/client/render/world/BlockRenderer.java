@@ -23,6 +23,7 @@ import cuboidx.client.render.VertexBuilder;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.util.ResourceLocation;
 import cuboidx.util.math.Direction;
+import cuboidx.world.World;
 import cuboidx.world.block.BlockType;
 import org.overrun.binpacking.PackerFitPos;
 import org.overrun.binpacking.PackerRegionSize;
@@ -55,7 +56,7 @@ public final class BlockRenderer {
     }
 
     public void renderBlockFace(VertexBuilder builder, BlockType block, int x, int y, int z, Direction face) {
-        final TextureAtlas atlas = Objects.requireNonNull(client.textureManager().getAsAtlas(WorldRenderer.BLOCK_ATLAS));
+        final TextureAtlas atlas = Objects.requireNonNull(client.textureManager().getAsAtlas(TextureAtlas.BLOCK_ATLAS));
         final ResourceLocation texture = block.texture(face);
         final Optional<PackerFitPos> optionalOffset = atlas.getOffset(texture);
         final Optional<PackerRegionSize> optionalSize;
@@ -79,6 +80,7 @@ public final class BlockRenderer {
         float x1 = x0 + 1f;
         float y1 = y0 + 1f;
         float z1 = z0 + 1f;
+        builder.indices(0, 1, 2, 2, 3, 0);
         builder.color(1f, 1f, 1f, 1f);
         switch (face) {
             case WEST -> renderBlockFace(builder,
@@ -126,5 +128,17 @@ public final class BlockRenderer {
         for (Direction direction : Direction.list()) {
             renderBlockFace(builder, block, x, y, z, direction);
         }
+    }
+
+    public boolean shouldRenderFace(BlockType block, World world, int x, int y, int z, Direction face) {
+        if (block.air()) return false;
+
+        final int bx = x + face.axisX();
+        final int by = y + face.axisY();
+        final int bz = z + face.axisZ();
+        if (world.isInBound(bx, by, bz)) {
+            return world.getBlock(bx, by, bz).air();
+        }
+        return true;
     }
 }

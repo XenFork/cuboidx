@@ -33,6 +33,7 @@ public final class Registries {
     private static final MutableRegistry<Registry<?>> ROOT_REGISTRY = new BaseRegistry<>(RegistryKey.ROOT, 2);
     public static final Registry<Registry<?>> ROOT_REGISTRY_VIEW = ROOT_REGISTRY;
     public static final DefaultedRegistry<BlockType> BLOCK_TYPE = of("block_type", () -> BlockTypes.AIR);
+    public static final RegistryKey BLOCK_TYPE_KEY = BLOCK_TYPE.registryKey();
 
     static {
         ROOT_REGISTRY.add(RegistryKey.ROOT.location(), ROOT_REGISTRY);
