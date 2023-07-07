@@ -20,18 +20,22 @@ package cuboidx.util;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.util.regex.Pattern;
+
 /**
  * @author squid233
  * @since 0.1.0
  */
 public /* value */ record ResourceLocation(String namespace, String path) {
+    private static final Pattern NAMESPACE_RULE = Pattern.compile("^[a-z0-9-_.]+$");
+    private static final Pattern PATH_RULE = Pattern.compile("^[a-z0-9-_./]+$");
     public static final String DEFAULT_NAMESPACE = "cuboidx";
     public static final String ASSETS = "assets";
     public static final String SHADER = "shader";
     public static final String TEXTURE = "texture";
 
     public static ResourceLocation cuboidx(String path) {
-        return new ResourceLocation(DEFAULT_NAMESPACE, path);
+        return new ResourceLocation(DEFAULT_NAMESPACE, checkPath(path));
     }
 
     public static ResourceLocation of(String location) {
@@ -39,8 +43,26 @@ public /* value */ record ResourceLocation(String namespace, String path) {
         return switch (split.length) {
             case 0 -> cuboidx("");
             case 1 -> cuboidx(split[0]);
-            default -> new ResourceLocation(split[0], split[1]);
+            default -> of(split[0], split[1]);
         };
+    }
+
+    public static ResourceLocation of(String namespace, String path) {
+        return new ResourceLocation(checkNamespace(namespace), checkPath(path));
+    }
+
+    private static String checkNamespace(String s) {
+        if (NAMESPACE_RULE.matcher(s).matches()) {
+            return s;
+        }
+        throw new IllegalArgumentException("Invalid namespace: " + s);
+    }
+
+    private static String checkPath(String s) {
+        if (PATH_RULE.matcher(s).matches()) {
+            return s;
+        }
+        throw new IllegalArgumentException("Invalid path: " + s);
     }
 
     public String toPath(@Nullable String prefix, @Nullable String type) {
