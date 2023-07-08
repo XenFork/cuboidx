@@ -22,8 +22,8 @@ import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.util.math.MathUtil;
 import cuboidx.util.ResourceLocation;
-import org.overrun.gl.opengl.GL;
-import org.overrun.gl.stb.STBImage;
+import overrungl.opengl.GL;
+import overrungl.stb.STBImage;
 
 /**
  * @author squid233

@@ -27,12 +27,12 @@ import cuboidx.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Vector3d;
-import org.overrun.gl.opengl.GL;
+import overrungl.opengl.GL;
 
 /**
  * The world renderer renders the world in {@link cuboidx.world.chunk.Chunk chunks}.
  * <p>
- * Each chunk is compiled in certain {@link RenderLayer layers}.<br>
+ * Each chunk is compiled in certain {@link BlockRenderLayer layers}.<br>
  * The world renderer first renders opaque blocks, then renders translucent blocks from far to near.
  * <p>
  * Chunks outside the view of the player are not rendered.
@@ -50,6 +50,7 @@ public final class WorldRenderer implements AutoCloseable {
     private final World world;
     private final int xChunks, yChunks, zChunks;
     private final ClientChunk[] chunks;
+    private final ChunkCompiler compiler = new ChunkCompiler();
     private boolean compiled = false;
 
     public WorldRenderer(CuboidX client, World world) {
@@ -78,10 +79,8 @@ public final class WorldRenderer implements AutoCloseable {
     }
 
     public void compileChunks() {
-        try (ChunkCompiler compiler = new ChunkCompiler()) {
-            for (ClientChunk chunk : chunks) {
-                chunk.compile(compiler);
-            }
+        for (ClientChunk chunk : chunks) {
+            chunk.compile(compiler.poll(BlockRenderLayer.OPAQUE));
         }
     }
 
@@ -135,6 +134,7 @@ public final class WorldRenderer implements AutoCloseable {
         for (ClientChunk chunk : chunks) {
             chunk.close();
         }
+        compiler.close();
         logger.info("Cleaned up WorldRenderer");
     }
 }

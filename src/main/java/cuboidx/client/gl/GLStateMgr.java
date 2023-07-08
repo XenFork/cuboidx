@@ -18,7 +18,7 @@
 
 package cuboidx.client.gl;
 
-import org.overrun.gl.opengl.GL;
+import overrungl.opengl.GL;
 
 /**
  * @author squid233

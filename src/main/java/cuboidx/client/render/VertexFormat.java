@@ -22,6 +22,8 @@ import cuboidx.client.gl.GLDataType;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SequenceLayout;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -39,6 +41,7 @@ public final /* value */ class VertexFormat {
     private final GLDataType type;
     private final boolean normalized;
     private final SequenceLayout layout;
+    private final List<VarHandleKey> varHandleKeys;
 
     private VertexFormat(int id, String name, int size, GLDataType type, boolean normalized) {
         this.id = id;
@@ -51,10 +54,21 @@ public final /* value */ class VertexFormat {
             finalLayout = finalLayout.withName(name);
         }
         this.layout = finalLayout;
+        this.varHandleKeys = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            this.varHandleKeys.add(new VarHandleKey(name, i));
+        }
     }
 
     public static VertexFormat padding(int size, int index) {
         return new VertexFormat(-1, "Padding" + index, size, GLDataType.BYTE, false);
+    }
+
+    /**
+     * @author squid233
+     * @since 0.1.0
+     */
+    public  /* value */ record VarHandleKey(String name, int index) {
     }
 
     public int id() {
@@ -87,6 +101,10 @@ public final /* value */ class VertexFormat {
 
     public MemoryLayout.PathElement pathElement() {
         return MemoryLayout.PathElement.groupElement(name);
+    }
+
+    public VarHandleKey varHandleKey(int index) {
+        return varHandleKeys.get(index);
     }
 
     public int byteSize() {

@@ -24,8 +24,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.overrun.binpacking.PackerFitPos;
 import org.overrun.binpacking.PackerRegion;
-import org.overrun.gl.stb.STBImage;
-import org.overrun.gl.util.MemoryStack;
+import overrungl.stb.STBImage;
+import overrungl.util.MemoryStack;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;

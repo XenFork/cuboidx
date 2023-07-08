@@ -24,8 +24,8 @@ import cuboidx.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.overrun.binpacking.*;
-import org.overrun.gl.opengl.GL;
-import org.overrun.gl.util.MemoryStack;
+import overrungl.opengl.GL;
+import overrungl.util.MemoryStack;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;

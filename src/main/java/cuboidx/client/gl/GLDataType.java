@@ -18,7 +18,7 @@
 
 package cuboidx.client.gl;
 
-import org.overrun.gl.opengl.GL;
+import overrungl.opengl.GL;
 
 import java.lang.foreign.ValueLayout;
 

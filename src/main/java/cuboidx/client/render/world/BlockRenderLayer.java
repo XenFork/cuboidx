@@ -18,6 +18,8 @@
 
 package cuboidx.client.render.world;
 
+import cuboidx.client.render.VertexLayout;
+
 /**
  * The render layer indicates which layer a block is.
  *
@@ -25,6 +27,7 @@ package cuboidx.client.render.world;
  * @see WorldRenderer
  * @since 0.1.0
  */
-public enum RenderLayer {
-    OPAQUE
+public /* value */ record BlockRenderLayer(VertexLayout layout, int verticesSize, int indicesSize) {
+    public static final BlockRenderLayer OPAQUE =
+        new BlockRenderLayer(VertexLayout.POSITION_COLOR_TEXTURE, 48 * 1024, 48 * 1024 / 4 * 6);
 }

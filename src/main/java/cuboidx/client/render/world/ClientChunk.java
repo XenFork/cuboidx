@@ -19,13 +19,14 @@
 package cuboidx.client.render.world;
 
 import cuboidx.client.CuboidX;
+import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.util.math.Direction;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockType;
 import cuboidx.world.chunk.Chunk;
-import org.overrun.gl.opengl.GL;
+import overrungl.opengl.GL;
 
 import java.lang.foreign.MemorySegment;
 
@@ -98,23 +99,25 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
         }
     }
 
-    public void compile(ChunkCompiler compiler) {
+    public void compile(BufferedVertexBuilder builder) {
         if (!dirty) return;
         final BlockRenderer renderer = client.blockRenderer();
-        compiler.begin(states);
+        builder.begin(GLDrawMode.TRIANGLES);
         for (Direction direction : Direction.list()) {
             for (int x = x0; x <= x1; x++) {
                 for (int y = y0; y <= y1; y++) {
                     for (int z = z0; z <= z1; z++) {
                         final BlockType block = world().getBlock(x, y, z);
                         if (renderer.shouldRenderFace(block, world(), x, y, z, direction)) {
-                            renderer.renderBlockFace(compiler, block, x, y, z, direction);
+                            renderer.renderBlockFace(builder, block, x, y, z, direction);
                         }
                     }
                 }
             }
         }
-        compiler.end();
+        states.setIndexCount(
+            builder.end(states.vao(), states.vbo(), states.ebo(), states.hasCompiled()));
+        states.markCompiled();
         dirty = false;
     }
 
