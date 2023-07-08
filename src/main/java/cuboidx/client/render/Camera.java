@@ -34,6 +34,10 @@ public final class Camera {
         prevPosition.set(position);
     }
 
+    public void setPosition(double x, double y, double z) {
+        prevPosition.set(position.set(x, y, z));
+    }
+
     public void move(double x, double y, double z) {
         position.add(x, y, z);
     }

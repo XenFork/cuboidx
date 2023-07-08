@@ -109,7 +109,8 @@ public final class CuboidX implements Runnable {
 
             BlockTypes.load();
             logger.info("Registered {} blocks", Registries.BLOCK_TYPE.size());
-            world = new World(64, 64, 64);
+            world = new World(256, 64, 256);
+            camera.setPosition(128, 20, 128);
 
             timer = Timer.ofGetter(TPS, GLFW::getTime);
 

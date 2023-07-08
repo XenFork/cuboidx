@@ -37,9 +37,9 @@ public final class MappedPool<K, T extends Poolable> {
     private final Function<K, T> constructor;
 
     public MappedPool(int numMappings, int initialCapacity, Function<K, T> constructor) {
-        this.map = HashMap.newHashMap(numMappings);
+        this.map = Collections.synchronizedMap(HashMap.newHashMap(numMappings));
         this.mapView = Collections.unmodifiableMap(this.map);
-        this.availableId = HashMap.newHashMap(numMappings);
+        this.availableId = Collections.synchronizedMap(HashMap.newHashMap(numMappings));
         this.initialCapacity = initialCapacity;
         this.constructor = constructor;
     }
@@ -49,8 +49,8 @@ public final class MappedPool<K, T extends Poolable> {
     }
 
     public T poll(K key) {
-        var list = map.computeIfAbsent(key, k -> new ArrayList<>(initialCapacity));
-        var idToState = availableId.computeIfAbsent(key, k -> HashMap.newHashMap(initialCapacity));
+        var list = map.computeIfAbsent(key, k -> Collections.synchronizedList(new ArrayList<>(initialCapacity)));
+        var idToState = availableId.computeIfAbsent(key, k -> Collections.synchronizedMap(HashMap.newHashMap(initialCapacity)));
         for (int i = 0, sz = list.size(); i < sz; i++) {
             T t = list.get(i);
             final Boolean b = idToState.get(i);
@@ -79,6 +79,6 @@ public final class MappedPool<K, T extends Poolable> {
      * {@return an unmodifiable view of the internal map}
      */
     public @UnmodifiableView Map<K, List<T>> map() {
-        return map;
+        return mapView;
     }
 }

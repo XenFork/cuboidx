@@ -26,8 +26,12 @@ import cuboidx.world.World;
 import cuboidx.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
 import overrungl.opengl.GL;
+
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The world renderer renders the world in {@link cuboidx.world.chunk.Chunk chunks}.
@@ -51,7 +55,7 @@ public final class WorldRenderer implements AutoCloseable {
     private final int xChunks, yChunks, zChunks;
     private final ClientChunk[] chunks;
     private final ChunkCompiler compiler = new ChunkCompiler();
-    private boolean compiled = false;
+    private final ExecutorService threadPool;
 
     public WorldRenderer(CuboidX client, World world) {
         this.client = client;
@@ -76,19 +80,40 @@ public final class WorldRenderer implements AutoCloseable {
                 }
             }
         }
+
+        final int processors = Runtime.getRuntime().availableProcessors();
+        threadPool = new ThreadPoolExecutor(processors,
+            processors + 2,
+            30L,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
+            new ThreadFactory() {
+                private final AtomicInteger threadNumber = new AtomicInteger(1);
+
+                @Override
+                public Thread newThread(@NotNull Runnable r) {
+                    return new Thread(r, "Chunk-worker-thread-" + threadNumber.getAndIncrement());
+                }
+            },
+            new ThreadPoolExecutor.DiscardPolicy());
     }
 
     public void compileChunks() {
         for (ClientChunk chunk : chunks) {
-            chunk.compile(compiler.poll(BlockRenderLayer.OPAQUE));
+            // TODO: 2023/7/8 Receiving changes
+            if (chunk.dirty() && !chunk.submitted()) {
+                threadPool.submit(() -> {
+                    chunk.setSubmitted(true);
+                    final BufferedVertexBuilder builder = compiler.poll(BlockRenderLayer.OPAQUE);
+                    chunk.compile(builder);
+                    compiler.free(BlockRenderLayer.OPAQUE, builder);
+                });
+            }
         }
     }
 
     public void renderChunks(double partialTick) {
-        if (!compiled) {
-            compileChunks();
-            compiled = true;
-        }
+        compileChunks();
 
         // initialize states
         RenderSystem.enableCullFace();
@@ -135,6 +160,7 @@ public final class WorldRenderer implements AutoCloseable {
             chunk.close();
         }
         compiler.close();
+        threadPool.shutdown();
         logger.info("Cleaned up WorldRenderer");
     }
 }

@@ -19,8 +19,6 @@
 package cuboidx.client.render.world;
 
 import cuboidx.client.gl.GLDrawMode;
-import cuboidx.client.gl.GLStateMgr;
-import cuboidx.client.gl.RenderSystem;
 import cuboidx.client.render.VertexBuilder;
 import cuboidx.client.render.VertexFormat;
 import cuboidx.client.render.VertexLayout;
@@ -28,7 +26,7 @@ import cuboidx.util.math.MathUtil;
 import cuboidx.util.pool.Poolable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import overrungl.opengl.GL;
+import overrungl.RuntimeHelper;
 
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
@@ -75,7 +73,7 @@ public final class BufferedVertexBuilder implements Poolable, VertexBuilder, Aut
                         PathElement.sequenceElement(i)));
             }
         }
-        this.arena = Arena.ofConfined(); // TODO: 2023/7/8 confined or shared ?
+        this.arena = Arena.ofShared();
         this.data = arena.allocate(sequenceLayout);
         this.indexData = arena.allocateArray(ValueLayout.JAVA_INT, indicesSize);
     }
@@ -103,7 +101,7 @@ public final class BufferedVertexBuilder implements Poolable, VertexBuilder, Aut
 
     public void begin(GLDrawMode mode) {
         if (drawing) {
-            logger.warn("Calling begin while drawing; ignoring");
+            logger.warn("Calling .begin while drawing; ignoring");
             return;
         }
         clear();
@@ -112,31 +110,25 @@ public final class BufferedVertexBuilder implements Poolable, VertexBuilder, Aut
     }
 
     // TODO: 2023/7/8 Value object
-    public int end(int vao, int vbo, int ebo, boolean hasCompiled) {
+    public int end(MemorySegment outDataSize, MemorySegment data, MemorySegment indexData) {
+        final long dataSize = sequenceLayout.byteOffset(PathElement.sequenceElement(vertexCount));
+
+        if (RuntimeHelper.isNullptr(data)) {
+            if (RuntimeHelper.isNullptr(indexData) && !RuntimeHelper.isNullptr(outDataSize)) {
+                outDataSize.set(ValueLayout.JAVA_LONG, 0, dataSize);
+            }
+            return indexCount;
+        }
+
         if (!drawing) {
-            logger.warn("Calling end while not drawing; ignoring");
+            logger.warn("Calling .end while not drawing; ignoring");
             return 0;
         }
         if (vertexCount == 0 || indexCount == 0) return 0;
 
-        final int vertexArrayBinding = GLStateMgr.vertexArrayBinding();
-        final int arrayBufferBinding = GLStateMgr.arrayBufferBinding();
-        RenderSystem.bindVertexArray(vao);
-        RenderSystem.bindArrayBuffer(vbo);
-        if (!hasCompiled) {
-            GL.bufferData(GL.ARRAY_BUFFER, data, GL.DYNAMIC_DRAW);
-            vertexLayout.specifyAttributes();
-        } else {
-            GL.bufferSubData(GL.ARRAY_BUFFER, 0, sequenceLayout.byteOffset(PathElement.sequenceElement(vertexCount)), data);
-        }
-        RenderSystem.bindArrayBuffer(arrayBufferBinding);
-        if (!hasCompiled) {
-            GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, ebo);
-            GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, indexData, GL.DYNAMIC_DRAW);
-        } else {
-            GL.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, 0, (long) indexCount << 2, indexData);
-        }
-        RenderSystem.bindVertexArray(vertexArrayBinding);
+        MemorySegment.copy(this.data, 0, data, 0, dataSize);
+        if (!RuntimeHelper.isNullptr(indexData))
+            MemorySegment.copy(this.indexData, 0, indexData, 0, (long) indexCount << 2);
 
         drawing = false;
         final int count = indexCount;
