@@ -25,6 +25,7 @@ import cuboidx.client.render.VertexBuilder;
 import cuboidx.client.render.VertexFormat;
 import cuboidx.client.render.VertexLayout;
 import cuboidx.util.math.MathUtil;
+import cuboidx.util.pool.Poolable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import overrungl.opengl.GL;
