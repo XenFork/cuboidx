@@ -27,6 +27,7 @@ import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockTypes;
+import cuboidx.world.entity.PlayerEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import overrungl.RuntimeHelper;
@@ -44,6 +45,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.DoubleSupplier;
 
 /**
  * @author squid233
@@ -59,7 +61,10 @@ public final class CuboidX implements Runnable {
     private final AtomicInteger width = new AtomicInteger();
     private final AtomicInteger height = new AtomicInteger();
     private final AtomicBoolean resized = new AtomicBoolean();
+    private final AtomicBoolean shouldRender = new AtomicBoolean(true);
     private final AtomicLong partialTick = new AtomicLong();
+    private final AtomicLong currentTime = new AtomicLong();
+    private final DoubleSupplier currentTimeGetter = () -> Double.longBitsToDouble(currentTime.get());
     private Timer timer;
     private Timer clientTimer;
     private TextureManager textureManager;
@@ -68,6 +73,7 @@ public final class CuboidX implements Runnable {
     private BlockRenderer blockRenderer;
     private World world;
     private WorldRenderer worldRenderer;
+    private final PlayerEntity player = new PlayerEntity();
 
     private CuboidX() {
         RuntimeHelper.setApiLogger(logger::error);
@@ -87,6 +93,7 @@ public final class CuboidX implements Runnable {
             this.height.set(height);
             this.resized.set(true);
         });
+        GLFW.setWindowIconifyCallback(window, (h, iconified) -> this.shouldRender.set(!iconified));
 
         final GLFWVidMode.Value videoMode = GLFW.getVideoMode(GLFW.getPrimaryMonitor());
         if (videoMode != null) {
@@ -110,9 +117,9 @@ public final class CuboidX implements Runnable {
             BlockTypes.load();
             logger.info("Registered {} blocks", Registries.BLOCK_TYPE.size());
             world = new World(256, 64, 256);
-            camera.setPosition(128, 20, 128);
+            player.setPosition(128, 20, 128);
 
-            timer = Timer.ofGetter(TPS, GLFW::getTime);
+            timer = Timer.ofGetter(TPS, currentTimeGetter);
 
             GLFW.showWindow(window);
             renderThread = new Thread(this, "Render thread");
@@ -123,14 +130,16 @@ public final class CuboidX implements Runnable {
             renderThread.start();
             try {
                 while (!GLFW.windowShouldClose(window)) {
+                    currentTime.set(Double.doubleToLongBits(GLFW.getTime()));
                     timer.advanceTime();
                     timer.performTicks(this::tick);
+                    lateUpdate();
                     partialTick.set(Double.doubleToLongBits(timer.partialTick()));
                     GLFW.pollEvents();
                 }
                 logger.info("Stopping!");
                 try {
-                    renderThread.join();
+                    renderThread.join(10000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -148,7 +157,7 @@ public final class CuboidX implements Runnable {
     }
 
     public void tick() {
-        camera.tick();
+        player.tick();
         double xo = 0.0, yo = 0.0, zo = 0.0;
         if (GLFW.getKey(window, GLFW.KEY_A) == GLFW.PRESS) xo--;
         if (GLFW.getKey(window, GLFW.KEY_D) == GLFW.PRESS) xo++;
@@ -156,12 +165,13 @@ public final class CuboidX implements Runnable {
         if (GLFW.getKey(window, GLFW.KEY_SPACE) == GLFW.PRESS) yo++;
         if (GLFW.getKey(window, GLFW.KEY_W) == GLFW.PRESS) zo--;
         if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
-        if (GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS) {
-            xo *= 3.0;
-            yo *= 3.0;
-            zo *= 3.0;
-        }
-        camera.moveRelative(xo, yo, zo, 0.1);
+        final boolean sprint = GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS;
+        player.moveRelative(xo, yo, zo, sprint ? 0.3 : 0.1);
+    }
+
+    public void lateUpdate() {
+        camera.update();
+        camera.moveToPlayer(player);
     }
 
     public void clientRender(double partialTick) {
@@ -179,16 +189,18 @@ public final class CuboidX implements Runnable {
         GL.clearColor(0.4f, 0.6f, 0.9f, 1.0f);
         textureManager = new TextureManager();
         gameRenderer = new GameRenderer(this);
-        gameRenderer.init();
         blockRenderer = new BlockRenderer(this);
         worldRenderer = new WorldRenderer(this, world);
 
-        clientTimer = Timer.ofGetter(TPS, GLFW::getTime);
+        clientTimer = Timer.ofGetter(TPS, currentTimeGetter);
         while (!GLFW.windowShouldClose(window)) {
             clientTimer.advanceTime();
-            clientRender(partialTick());
-            GLFW.swapBuffers(window);
-            clientTimer.calcFPS();
+            if (shouldRender.get()) {
+                clientRender(partialTick());
+                GLFW.swapBuffers(window);
+            }
+            // TODO: 2023/7/9 Debugging
+            clientTimer.calcFPS(fps -> logger.debug("FPS: {}", fps));
         }
         clientClose();
     }
@@ -244,6 +256,10 @@ public final class CuboidX implements Runnable {
 
     public WorldRenderer worldRenderer() {
         return worldRenderer;
+    }
+
+    public PlayerEntity player() {
+        return player;
     }
 
     public static CuboidX getInstance() {

@@ -18,7 +18,8 @@
 
 package cuboidx.client.render.world;
 
-import cuboidx.util.pool.MappedPool;
+import cuboidx.client.render.BufferedVertexBuilder;
+import cuboidx.util.pool.KeyedPool;
 
 /**
  * @author squid233
@@ -26,7 +27,7 @@ import cuboidx.util.pool.MappedPool;
  */
 // TODO: 2023/7/8 Multithreading
 public final class ChunkCompiler implements AutoCloseable {
-    private final MappedPool<BlockRenderLayer, BufferedVertexBuilder> pool = new MappedPool<>(1,
+    private final KeyedPool<BlockRenderLayer, BufferedVertexBuilder> pool = new KeyedPool<>(1,
         8,
         layer -> new BufferedVertexBuilder(layer.layout(), layer.verticesSize(), layer.indicesSize()));
 

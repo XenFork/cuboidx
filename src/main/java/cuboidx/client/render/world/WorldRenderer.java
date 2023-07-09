@@ -21,6 +21,7 @@ package cuboidx.client.render.world;
 import cuboidx.client.CuboidX;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
+import cuboidx.client.render.BufferedVertexBuilder;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.world.World;
 import cuboidx.world.chunk.Chunk;
@@ -30,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
 import overrungl.opengl.GL;
 
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,10 +52,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class WorldRenderer implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
+    private static final int MAX_COMPILE_COUNT = Runtime.getRuntime().availableProcessors() + 1;
     private final CuboidX client;
     private final World world;
     private final int xChunks, yChunks, zChunks;
     private final ClientChunk[] chunks;
+    private final List<ClientChunk> dirtyChunks;
     private final ChunkCompiler compiler = new ChunkCompiler();
     private final ExecutorService threadPool;
 
@@ -80,10 +84,10 @@ public final class WorldRenderer implements AutoCloseable {
                 }
             }
         }
+        this.dirtyChunks = Collections.synchronizedList(new ArrayList<>(chunks.length));
 
-        final int processors = Runtime.getRuntime().availableProcessors();
-        threadPool = new ThreadPoolExecutor(processors,
-            processors + 2,
+        threadPool = new ThreadPoolExecutor(MAX_COMPILE_COUNT - 1,
+            MAX_COMPILE_COUNT,
             30L,
             TimeUnit.SECONDS,
             new SynchronousQueue<>(),
@@ -99,16 +103,23 @@ public final class WorldRenderer implements AutoCloseable {
     }
 
     public void compileChunks() {
+        dirtyChunks.clear();
         for (ClientChunk chunk : chunks) {
             // TODO: 2023/7/8 Receiving changes
             if (chunk.dirty() && !chunk.submitted()) {
-                threadPool.submit(() -> {
-                    chunk.setSubmitted(true);
-                    final BufferedVertexBuilder builder = compiler.poll(BlockRenderLayer.OPAQUE);
-                    chunk.compile(builder);
-                    compiler.free(BlockRenderLayer.OPAQUE, builder);
-                });
+                dirtyChunks.add(chunk);
             }
+        }
+        dirtyChunks.sort(new DirtyChunkSorter(client.player(), RenderSystem.frustum()));
+        for (int i = 0; i < dirtyChunks.size() && i < MAX_COMPILE_COUNT; i++) {
+            final ClientChunk chunk = dirtyChunks.get(i);
+            threadPool.submit(() -> {
+                chunk.setSubmitted(true);
+                final BufferedVertexBuilder builder = compiler.poll(BlockRenderLayer.OPAQUE);
+                chunk.compile(builder);
+                compiler.free(BlockRenderLayer.OPAQUE, builder);
+                chunk.setSubmitted(false);
+            });
         }
     }
 
@@ -133,6 +144,7 @@ public final class WorldRenderer implements AutoCloseable {
             (float) -pos.y(),
             (float) -pos.z()
         );
+        RenderSystem.updateFrustum();
         final int currentProgram = GLStateMgr.currentProgram();
         RenderSystem.useProgram(client.gameRenderer().positionColorTextureProgram(), program -> {
             program.projectionMatrix().set(RenderSystem.projectionMatrix());
@@ -143,7 +155,9 @@ public final class WorldRenderer implements AutoCloseable {
 
         // render
         for (ClientChunk chunk : chunks) {
-            chunk.render();
+            if (chunk.isVisible(RenderSystem.frustum())) {
+                chunk.render();
+            }
         }
 
         // reset states

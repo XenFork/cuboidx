@@ -43,13 +43,6 @@ public final class GameRenderer implements AutoCloseable {
 
     public GameRenderer(CuboidX client) {
         this.client = client;
-    }
-
-    private static GLProgram loadProgram(String path, VertexLayout layout) {
-        return Objects.requireNonNull(GLProgram.load(ResourceLocation.cuboidx(path), layout), "Couldn't load program " + path);
-    }
-
-    public void init() {
         positionColorProgram = loadProgram("core/position_color", VertexLayout.POSITION_COLOR);
         positionColorTextureProgram = loadProgram("core/position_color_texture", VertexLayout.POSITION_COLOR_TEXTURE);
         final Set<ResourceLocation> textures = new HashSet<>();
@@ -64,6 +57,10 @@ public final class GameRenderer implements AutoCloseable {
         final TextureAtlas atlas = TextureAtlas.load(TextureAtlas.BLOCK_ATLAS, textures);
         client.textureManager().add(atlas);
         logger.info("Created: {}x{}x{} {}", atlas.width(), atlas.height(), atlas.mipmapLevel(), TextureAtlas.BLOCK_ATLAS);
+    }
+
+    private static GLProgram loadProgram(String path, VertexLayout layout) {
+        return Objects.requireNonNull(GLProgram.load(ResourceLocation.cuboidx(path), layout), "Couldn't load program " + path);
     }
 
     public void render(double partialTick) {

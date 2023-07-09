@@ -29,14 +29,14 @@ import java.util.function.Function;
  * @author squid233
  * @since 0.1.0
  */
-public final class MappedPool<K, T extends Poolable> {
+public final class KeyedPool<K, T extends Poolable> {
     private final Map<K, List<T>> map;
     private final Map<K, List<T>> mapView;
     private final Map<K, Map<Integer, Boolean>> availableId;
     private final int initialCapacity;
     private final Function<K, T> constructor;
 
-    public MappedPool(int numMappings, int initialCapacity, Function<K, T> constructor) {
+    public KeyedPool(int numMappings, int initialCapacity, Function<K, T> constructor) {
         this.map = Collections.synchronizedMap(HashMap.newHashMap(numMappings));
         this.mapView = Collections.unmodifiableMap(this.map);
         this.availableId = Collections.synchronizedMap(HashMap.newHashMap(numMappings));
@@ -44,7 +44,7 @@ public final class MappedPool<K, T extends Poolable> {
         this.constructor = constructor;
     }
 
-    public MappedPool(Function<K, T> constructor) {
+    public KeyedPool(Function<K, T> constructor) {
         this(32, 128, constructor);
     }
 

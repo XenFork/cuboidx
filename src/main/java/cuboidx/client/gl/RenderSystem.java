@@ -19,6 +19,7 @@
 package cuboidx.client.gl;
 
 import cuboidx.client.texture.Texture2D;
+import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
@@ -32,7 +33,9 @@ public final class RenderSystem {
     private static final Matrix4fStack projectionMatrix = new Matrix4fStack(4);
     private static final Matrix4fStack viewMatrix = new Matrix4fStack(32);
     private static final Matrix4fStack modelMatrix = new Matrix4fStack(32);
+    private static final Matrix4f projectionViewMatrix = new Matrix4f();
     private static final Matrix4f modelViewMatrix = new Matrix4f();
+    private static final FrustumIntersection frustum = new FrustumIntersection();
 
     public static void useProgram(int program) {
         GLStateMgr.useProgram(program);
@@ -110,5 +113,13 @@ public final class RenderSystem {
 
     public static Matrix4f modelViewMatrix() {
         return viewMatrix.mul(modelMatrix, modelViewMatrix);
+    }
+
+    public static void updateFrustum() {
+        frustum.set(projectionMatrix.mul(viewMatrix, projectionViewMatrix));
+    }
+
+    public static FrustumIntersection frustum() {
+        return frustum;
     }
 }

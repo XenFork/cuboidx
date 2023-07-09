@@ -22,10 +22,13 @@ import cuboidx.client.CuboidX;
 import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
+import cuboidx.client.render.BufferedVertexBuilder;
 import cuboidx.util.math.Direction;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockType;
 import cuboidx.world.chunk.Chunk;
+import cuboidx.world.entity.PlayerEntity;
+import org.joml.FrustumIntersection;
 import overrungl.opengl.GL;
 import overrungl.util.MemoryStack;
 import overrungl.util.MemoryUtil;
@@ -34,8 +37,33 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * A client chunk that stored the vertices and indices data.
+ * <p>
+ * There are 4 phases of compilation: dirtying, submitting, compiling and uploading.
+ *
+ * <h2>Dirtying</h2>
+ * If the content of this chunk has been changed, this chunk will {@link #markDirty()}.
+ * {@link WorldRenderer} will collect dirty chunks and submit then to the compiling task queue.
+ *
+ * <h2>Submitting</h2>
+ * Dirty chunks are submitted.
+ * If the chunk submitted successfully, {@link #submitted() submitted} will be set to {@code true} and it will compile;
+ * otherwise it is discarded and deferred to next submitting.
+ *
+ * <h2>Compiling</h2>
+ * Compiling chunk means building mesh data of the chunk.
+ * This is done from another thread.
+ * Once the chunk is compiled, {@link CompileStates#hadCompiled() hadCompiled} will be set to {@code true},
+ * {@link CompileStates#uploaded() uploaded}, {@link #dirty() dirty} and {@link #submitted() submitted} will be set to false.
+ *
+ * <h2>Uploading</h2>
+ * If the chunk have had compiled, then the render thread will upload the mesh data to OpenGL.
+ * Once the chunk is uploaded {@link CompileStates#hadUploaded() hadUploaded}
+ * and {@link CompileStates#uploaded() uploaded} will be set to {@code true}.
+ *
  * @author squid233
  * @since 0.1.0
  */
@@ -44,10 +72,11 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
     private final CuboidX client;
     private final AtomicBoolean dirty = new AtomicBoolean(true);
     private final AtomicBoolean submitted = new AtomicBoolean();
+    private final AtomicLong dirtyTime = new AtomicLong(System.currentTimeMillis());
 
     public ClientChunk(CuboidX client,
                        World world,
-                       int x, int y, int z,
+                       double x, double y, double z,
                        int x0, int y0, int z0,
                        int x1, int y1, int z1) {
         super(world, x, y, z, x0, y0, z0, x1, y1, z1);
@@ -55,6 +84,8 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
     }
 
     /**
+     * The compiling states of the client chunk.
+     *
      * @author squid233
      * @since 0.1.0
      */
@@ -62,9 +93,9 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
         private final BlockRenderLayer layer = BlockRenderLayer.OPAQUE;
         private final int vao, vbo, ebo;
         private final AtomicInteger indexCount = new AtomicInteger();
-        private final AtomicBoolean compiled = new AtomicBoolean();
         private final AtomicBoolean hadCompiled = new AtomicBoolean();
-        private boolean uploaded = false;
+        private final AtomicBoolean uploaded = new AtomicBoolean();
+        private boolean hadUploaded = false;
         private MemorySegment data;
         private MemorySegment indexData;
 
@@ -98,17 +129,6 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
             return indexCount.get();
         }
 
-        public void setCompiled(boolean compiled) {
-            this.compiled.set(compiled);
-        }
-
-        /**
-         * Is this chunk compiled?
-         */
-        public boolean compiled() {
-            return compiled.get();
-        }
-
         public void markCompiled() {
             this.hadCompiled.set(true);
         }
@@ -121,11 +141,25 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
         }
 
         public void setUploaded(boolean uploaded) {
-            this.uploaded = uploaded;
+            this.uploaded.set(uploaded);
         }
 
+        /**
+         * Is this chunk re-compiled and then uploaded?
+         */
         public boolean uploaded() {
-            return uploaded;
+            return uploaded.get();
+        }
+
+        public void markUploaded() {
+            this.hadUploaded = true;
+        }
+
+        /**
+         * Had this chunk uploaded?
+         */
+        public boolean hadUploaded() {
+            return hadUploaded;
         }
 
         public void setData(MemorySegment data) {
@@ -156,13 +190,12 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
 
     public void compile(BufferedVertexBuilder builder) {
         if (!dirty()) return;
-        states.setCompiled(false);
         final BlockRenderer renderer = client.blockRenderer();
         builder.begin(GLDrawMode.TRIANGLES);
         for (Direction direction : Direction.list()) {
-            for (int x = x0; x <= x1; x++) {
-                for (int y = y0; y <= y1; y++) {
-                    for (int z = z0; z <= z1; z++) {
+            for (int x = x0(); x <= x1(); x++) {
+                for (int y = y0(); y <= y1(); y++) {
+                    for (int z = z0(); z <= z1(); z++) {
                         final BlockType block = world().getBlock(x, y, z);
                         if (renderer.shouldRenderFace(block, world(), x, y, z, direction)) {
                             renderer.renderBlockFace(builder, block, x, y, z, direction);
@@ -179,39 +212,45 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
             if (!states.hadCompiled()) {
                 states.setData(MemoryUtil.calloc(1, dataSize));
                 states.setIndexData(MemoryUtil.calloc(states.indexCount(), ValueLayout.JAVA_INT));
-            }
-            // if expanded
-            else if (dataSize > states.data().byteSize()) {
-                states.setData(MemoryUtil.realloc(states.data(), dataSize));
+            } else {
+                // if expanded
+                if (dataSize > states.data().byteSize()) {
+                    states.setData(MemoryUtil.realloc(states.data(), dataSize));
+                }
+                final long indexDataSize = (long) states.indexCount() << 2;
+                if (indexDataSize > states.indexData().byteSize()) {
+                    states.setIndexData(MemoryUtil.realloc(states.indexData(), indexDataSize));
+                }
             }
             builder.end(null, states.data(), states.indexData());
+            states.markCompiled();
+            states.setUploaded(false);
         }
-        states.setCompiled(true);
         dirty.set(false);
     }
 
     public void render() {
-        if (states.compiled()) {
+        if (states.hadCompiled()) {
             if (!states.uploaded()) {
                 final int vertexArrayBinding = GLStateMgr.vertexArrayBinding();
                 final int arrayBufferBinding = GLStateMgr.arrayBufferBinding();
                 RenderSystem.bindVertexArray(states.vao());
                 RenderSystem.bindArrayBuffer(states.vbo());
-                if (!states.hadCompiled()) {
+                if (!states.hadUploaded()) {
                     GL.bufferData(GL.ARRAY_BUFFER, states.data(), GL.DYNAMIC_DRAW);
                     states.layer().layout().specifyAttributes();
                 } else {
                     GL.bufferSubData(GL.ARRAY_BUFFER, 0, states.data());
                 }
                 RenderSystem.bindArrayBuffer(arrayBufferBinding);
-                if (!states.hadCompiled()) {
+                if (!states.hadUploaded()) {
                     GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, states.ebo());
                     GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, states.indexData(), GL.DYNAMIC_DRAW);
                 } else {
                     GL.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, 0, states.indexData());
                 }
                 RenderSystem.bindVertexArray(vertexArrayBinding);
-                states.markCompiled();
+                states.markUploaded();
                 states.setUploaded(true);
             }
             final int vertexArrayBinding = GLStateMgr.vertexArrayBinding();
@@ -221,8 +260,17 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
         }
     }
 
+    public void markDirty() {
+        dirty.set(true);
+        dirtyTime.set(System.currentTimeMillis());
+    }
+
     public boolean dirty() {
         return dirty.get();
+    }
+
+    public long dirtyTime() {
+        return dirtyTime.get();
     }
 
     public void setSubmitted(boolean submitted) {
@@ -231,6 +279,18 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
 
     public boolean submitted() {
         return submitted.get();
+    }
+
+    public CompileStates states() {
+        return states;
+    }
+
+    public double distanceSqr(PlayerEntity player) {
+        return player.position().distanceSquared(x(), y(), z());
+    }
+
+    public boolean isVisible(FrustumIntersection frustum) {
+        return frustum.testAab(x0(), y0(), z0(), x1(), y1(), z1());
     }
 
     @Override

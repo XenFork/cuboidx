@@ -16,41 +16,36 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.client.render;
+package cuboidx.world.entity;
 
-import cuboidx.world.entity.PlayerEntity;
 import org.joml.Vector3d;
-import org.overrun.timer.Timer;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class Camera {
+public class PlayerEntity {
     private final Vector3d prevPosition = new Vector3d();
     private final Vector3d position = new Vector3d();
-    private final Vector3d lerpPosition = new Vector3d();
+    private double eyeHeight = 1.68;
+
+    public PlayerEntity() {
+    }
+
+    public void tick() {
+        prevPosition.set(position);
+    }
 
     public void setPosition(double x, double y, double z) {
         position.set(x, y, z);
     }
 
-    public void update() {
-        prevPosition.set(position);
+    public void move(double x, double y, double z) {
+        position.add(x, y, z);
     }
 
-    public void moveToPlayer(PlayerEntity player) {
-        final Vector3d pos = player.position();
-        position.set(pos.x(), pos.y(), pos.z());
-    }
-
-    /**
-     * Linearly interpolate to the position vector of this camera.
-     *
-     * @param partialTick see {@link Timer#partialTick()}.
-     */
-    public void lerp(double partialTick) {
-        prevPosition.lerp(position, partialTick, lerpPosition);
+    public void moveRelative(double x, double y, double z, double speed) {
+        move(x * speed, y * speed, z * speed);
     }
 
     public Vector3d prevPosition() {
@@ -61,7 +56,7 @@ public final class Camera {
         return position;
     }
 
-    public Vector3d lerpPosition() {
-        return lerpPosition;
+    public double eyeHeight() {
+        return eyeHeight;
     }
 }
