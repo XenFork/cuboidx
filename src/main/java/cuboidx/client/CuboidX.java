@@ -30,16 +30,16 @@ import cuboidx.world.block.BlockTypes;
 import cuboidx.world.entity.PlayerEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import overrungl.RuntimeHelper;
-import overrungl.opengl.GL;
-import overrungl.opengl.GLLoader;
-import overrungl.glfw.Callbacks;
+import org.overrun.timer.Timer;
+import overrungl.OverrunGL;
 import overrungl.glfw.GLFW;
+import overrungl.glfw.GLFWCallbacks;
 import overrungl.glfw.GLFWErrorCallback;
 import overrungl.glfw.GLFWVidMode;
-import overrungl.util.MemoryStack;
+import overrungl.opengl.GL;
+import overrungl.opengl.GLLoader;
+import overrungl.util.CheckUtil;
 import overrungl.util.value.Pair;
-import org.overrun.timer.Timer;
 
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,7 +55,6 @@ public final class CuboidX implements Runnable {
     private static final Logger logger = LogManager.getLogger();
     public static final String VERSION = "0.1.0";
     public static final double TPS = 20.0;
-    private static CuboidX instance;
     private Thread renderThread;
     private MemorySegment window;
     private final AtomicInteger width = new AtomicInteger();
@@ -76,18 +75,16 @@ public final class CuboidX implements Runnable {
     private final PlayerEntity player = new PlayerEntity();
 
     private CuboidX() {
-        RuntimeHelper.setApiLogger(logger::error);
+        OverrunGL.setApiLogger(logger::error);
         GLFWErrorCallback.createLog(logger::error).set();
-        RuntimeHelper.check(GLFW.init(), "Unable to initialize GLFW");
+        CheckUtil.check(GLFW.init(), "Unable to initialize GLFW");
         GLFW.windowHint(GLFW.VISIBLE, false);
         GLFW.windowHint(GLFW.CONTEXT_VERSION_MAJOR, 3);
         GLFW.windowHint(GLFW.CONTEXT_VERSION_MINOR, 3);
         GLFW.windowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_COMPAT_PROFILE);
         GLFW.windowHint(GLFW.OPENGL_FORWARD_COMPAT, true);
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            window = GLFW.createWindow(stack, 854, 480, "CuboidX " + VERSION, MemorySegment.NULL, MemorySegment.NULL);
-        }
-        RuntimeHelper.check(!RuntimeHelper.isNullptr(window), "Failed to create the GLFW window");
+        window = GLFW.createWindow(854, 480, "CuboidX " + VERSION, MemorySegment.NULL, MemorySegment.NULL);
+        CheckUtil.checkNotNullptr(window, "Failed to create the GLFW window");
         GLFW.setFramebufferSizeCallback(window, (h /* TODO: _ doesn't support? */, width, height) -> {
             this.width.set(width);
             this.height.set(height);
@@ -99,16 +96,16 @@ public final class CuboidX implements Runnable {
         if (videoMode != null) {
             final Pair.OfInt size = GLFW.getWindowSize(window);
             GLFW.setWindowPos(window,
-                (videoMode.width() - size.x()) / 2,
-                (videoMode.height() - size.y()) / 2);
+                    (videoMode.width() - size.x()) / 2,
+                    (videoMode.height() - size.y()) / 2);
         }
 
         try {
             logger.info("Starting CuboidX {}", VERSION);
             logger.info("""
-                Detected 2 mods:
-                    - {} {}
-                    - java {}""", ResourceLocation.DEFAULT_NAMESPACE, VERSION, Runtime.version());
+                    Detected 2 mods:
+                        - {} {}
+                        - java {}""", ResourceLocation.DEFAULT_NAMESPACE, VERSION, Runtime.version());
 
             final Pair.OfInt size = GLFW.getFramebufferSize(window);
             width.set(size.x());
@@ -150,7 +147,7 @@ public final class CuboidX implements Runnable {
             logger.error(e);
             renderThread.interrupt();
         } finally {
-            Callbacks.free(window);
+            GLFWCallbacks.free(window);
             GLFW.destroyWindow(window);
             GLFW.terminate();
         }
@@ -185,7 +182,7 @@ public final class CuboidX implements Runnable {
     @Override
     public void run() {
         GLFW.makeContextCurrent(window);
-        RuntimeHelper.check(GLLoader.loadConfined(true, GLFW::ngetProcAddress) != null, "Failed to load OpenGL");
+        CheckUtil.checkNotNull(GLLoader.load(GLFW::getProcAddress, true), "Failed to load OpenGL");
         GL.clearColor(0.4f, 0.6f, 0.9f, 1.0f);
         textureManager = new TextureManager();
         gameRenderer = new GameRenderer(this);
@@ -199,8 +196,7 @@ public final class CuboidX implements Runnable {
                 clientRender(partialTick());
                 GLFW.swapBuffers(window);
             }
-            // TODO: 2023/7/9 Debugging
-            clientTimer.calcFPS(fps -> logger.debug("FPS: {}", fps));
+            clientTimer.calcFPS();
         }
         clientClose();
     }
@@ -263,9 +259,9 @@ public final class CuboidX implements Runnable {
     }
 
     public static CuboidX getInstance() {
-        if (instance == null) {
-            instance = new CuboidX();
+        class Holder {
+            private static final CuboidX INSTANCE = new CuboidX();
         }
-        return instance;
+        return Holder.INSTANCE;
     }
 }

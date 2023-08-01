@@ -40,11 +40,12 @@ repositories {
 }
 
 dependencies {
+    implementation(platform("io.github.over-run:utilities:0.+"))
+    implementation "io.github.over-run:bin-packing"
+    implementation "io.github.over-run:bin-tag"
+    implementation "io.github.over-run:timer"
+    implementation "io.github.over-run:unifont"
     implementation "com.google.code.gson:gson:2.10.1"
-    implementation "io.github.over-run:bin-packing:0.4.0"
-    implementation "io.github.over-run:bin-tag:0.1.0"
-    implementation "io.github.over-run:timer:0.2.0"
-    implementation "io.github.over-run:unifont:15.0.06"
     implementation "org.apache.logging.log4j:log4j-api:2.20.0"
     implementation "org.apache.logging.log4j:log4j-core:2.20.0"
     annotationProcessor "org.apache.logging.log4j:log4j-core:2.20.0"

@@ -23,7 +23,6 @@ import overrungl.opengl.GL;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.StructLayout;
 import java.util.Arrays;
 import java.util.List;
@@ -63,10 +62,10 @@ public final class VertexLayout {
         this.varHandleCount = finalVHC;
     }
 
-    public void bindLocations(SegmentAllocator allocator, int program) {
+    public void bindLocations(int program) {
         for (VertexFormat format : formats) {
             if (format.isPadding()) continue;
-            GL.bindAttribLocation(allocator, program, format.id(), format.name());
+            GL.bindAttribLocation(program, format.id(), format.name());
         }
     }
 

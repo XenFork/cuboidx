@@ -23,6 +23,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.regex.Pattern;
 
 /**
+ * A resource location.
+ * Use {@link #of(String, String)} instead of the constructor to validate the namespace and the path.
+ *
+ * @param namespace the namespace. Must match regex pattern {@code ^[a-z0-9-_.]+$}
+ * @param path      the path. Must match regex pattern {@code ^[a-z0-9-_./]+$}
  * @author squid233
  * @since 0.1.0
  */

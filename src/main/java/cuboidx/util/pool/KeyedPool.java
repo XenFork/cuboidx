@@ -26,6 +26,8 @@ import java.util.function.Function;
 /**
  * A pool, polls instances with a given key.
  *
+ * @param <K> the type of the key
+ * @param <T> the type of the instances
  * @author squid233
  * @since 0.1.0
  */

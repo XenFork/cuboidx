@@ -21,6 +21,7 @@ package cuboidx.registry;
 import cuboidx.util.ResourceLocation;
 import cuboidx.world.block.BlockType;
 import cuboidx.world.block.BlockTypes;
+import cuboidx.world.entity.EntityType;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,13 +31,13 @@ import java.util.function.Supplier;
  * @since 0.1.0
  */
 public final class Registries {
-    private static final MutableRegistry<Registry<?>> ROOT_REGISTRY = new BaseRegistry<>(RegistryKey.ROOT, 2);
+    private static final MutableRegistry<Registry<?>> ROOT_REGISTRY = new BaseRegistry<>(RegistryKeys.ROOT, 3);
     public static final Registry<Registry<?>> ROOT_REGISTRY_VIEW = ROOT_REGISTRY;
-    public static final DefaultedRegistry<BlockType> BLOCK_TYPE = of("block_type", () -> BlockTypes.AIR);
-    public static final RegistryKey BLOCK_TYPE_KEY = BLOCK_TYPE.registryKey();
+    public static final DefaultedRegistry<BlockType> BLOCK_TYPE = of(RegistryKeys.BLOCK_TYPE, () -> BlockTypes.AIR);
+    public static final Registry<EntityType> ENTITY_TYPE = of(RegistryKeys.ENTITY_TYPE, BaseRegistry::new);
 
     static {
-        ROOT_REGISTRY.add(RegistryKey.ROOT.location(), ROOT_REGISTRY);
+        ROOT_REGISTRY.add(RegistryKeys.ROOT.location(), ROOT_REGISTRY);
     }
 
     public static <T, R extends T> R register(MutableRegistry<T> registry, ResourceLocation location, R entry) {
@@ -47,16 +48,11 @@ public final class Registries {
         return register(registry, ResourceLocation.of(location), entry);
     }
 
-    public static <T, R extends Registry<T>> R of(ResourceLocation location, Function<RegistryKey, R> registry) {
-        final RegistryKey key = RegistryKey.ROOT.child(location);
-        return ROOT_REGISTRY.add(key.location(), registry.apply(key));
+    public static <T, R extends Registry<T>> R of(RegistryKey<T> registryKey, Function<RegistryKey<T>, R> registry) {
+        return ROOT_REGISTRY.add(registryKey.location(), registry.apply(registryKey));
     }
 
-    public static <T> DefaultedRegistry<T> of(ResourceLocation location, Supplier<T> defaultValue) {
-        return of(location, k -> new DefaultedRegistry<>(k, defaultValue));
-    }
-
-    private static <T> DefaultedRegistry<T> of(String name, Supplier<T> defaultValue) {
-        return of(ResourceLocation.cuboidx(name), defaultValue);
+    public static <T> DefaultedRegistry<T> of(RegistryKey<T> registryKey, Supplier<T> defaultValue) {
+        return ROOT_REGISTRY.add(registryKey.location(), new DefaultedRegistry<>(registryKey, defaultValue));
     }
 }

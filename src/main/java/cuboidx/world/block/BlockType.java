@@ -18,9 +18,8 @@
 
 package cuboidx.world.block;
 
-import cuboidx.registry.Registries;
-import cuboidx.util.math.Direction;
 import cuboidx.util.ResourceLocation;
+import cuboidx.util.math.Direction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +30,7 @@ import java.util.function.Function;
  * @author squid233
  * @since 0.1.0
  */
-public final /* identity */ class BlockType {
+public final class BlockType {
     private final boolean air;
     private final Map<Direction, ResourceLocation> texture; // TODO: Use Function instead of Map cache; use block state model instead of Function
 
@@ -71,10 +70,6 @@ public final /* identity */ class BlockType {
                 air,
                 air ? null : Objects.requireNonNull(texture, "texture")
             );
-        }
-
-        public BlockType register(ResourceLocation identifier) {
-            return Registries.register(Registries.BLOCK_TYPE, identifier, build());
         }
     }
 

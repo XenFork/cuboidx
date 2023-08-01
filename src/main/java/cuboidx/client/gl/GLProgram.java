@@ -27,6 +27,7 @@ import cuboidx.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import overrungl.opengl.GL;
+import overrungl.util.MemoryStack;
 
 import java.lang.foreign.Arena;
 import java.util.HashMap;
@@ -48,29 +49,31 @@ public final class GLProgram implements AutoCloseable {
     }
 
     public static GLProgram load(ResourceLocation location, VertexLayout layout) {
-        try (Arena arena = Arena.ofConfined()) {
+        try {
             final GLProgram program = new GLProgram();
 
-            final JsonObject json = JsonParser.parseString(FileUtil.readString(
-                location.toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".json")
+            final JsonObject json = JsonParser.parseString(Objects.requireNonNull(FileUtil.readString(
+                location.toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".json"))
             ).getAsJsonObject();
 
-            final int vsh = compileShader(arena, GL.VERTEX_SHADER, "vertex",
+            final int vsh = compileShader(GL.VERTEX_SHADER, "vertex",
                 FileUtil.readString(ResourceLocation.of(json.get("vertex").getAsString())
                     .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".vert"));
             if (vsh < 0) return null;
-            final int fsh = compileShader(arena, GL.FRAGMENT_SHADER, "fragment",
+            final int fsh = compileShader(GL.FRAGMENT_SHADER, "fragment",
                 FileUtil.readString(ResourceLocation.of(json.get("fragment").getAsString())
                     .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".frag"));
             if (fsh < 0) return null;
 
             GL.attachShader(program.id(), vsh);
             GL.attachShader(program.id(), fsh);
-            layout.bindLocations(arena, program.id());
+            layout.bindLocations(program.id());
             GL.linkProgram(program.id());
             final boolean failed = GL.getProgrami(program.id(), GL.LINK_STATUS) == GL.FALSE;
             if (failed) {
-                logger.error("Failed to link the program: {}", GL.getProgramInfoLog(arena, program.id));
+                try (MemoryStack stack = MemoryStack.stackPush()) {
+                    logger.error("Failed to link the program: {}", GL.getProgramInfoLog(stack, program.id));
+                }
             }
             GL.detachShader(program.id(), vsh);
             GL.detachShader(program.id(), fsh);
@@ -80,7 +83,7 @@ public final class GLProgram implements AutoCloseable {
 
             final JsonObject uniforms = json.getAsJsonObject("uniforms");
             for (var e : uniforms.entrySet()) {
-                program.initUniform(arena, e.getValue().getAsJsonObject(), e.getKey());
+                program.initUniform(e.getValue().getAsJsonObject(), e.getKey());
             }
 
             return program;
@@ -90,21 +93,23 @@ public final class GLProgram implements AutoCloseable {
         }
     }
 
-    private static int compileShader(Arena arena, int type, String typeName, String src) {
+    private static int compileShader(int type, String typeName, String src) {
         final int shader = GL.createShader(type);
-        GL.shaderSource(arena, shader, src);
+        GL.shaderSource(shader, src);
         GL.compileShader(shader);
         if (GL.getShaderi(shader, GL.COMPILE_STATUS) == GL.FALSE) {
-            logger.error("Failed to compile the {} shader: {}", typeName, GL.getShaderInfoLog(arena, shader));
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                logger.error("Failed to compile the {} shader: {}", typeName, GL.getShaderInfoLog(stack, shader));
+            }
             return -1;
         }
         return shader;
     }
 
-    private void initUniform(Arena arena, JsonObject json, String name) {
+    private void initUniform(JsonObject json, String name) {
         final GLUniform.Type type = GLUniform.Type.byName(json.get("type").getAsString());
         final JsonArray values = json.getAsJsonArray("values");
-        final GLUniform uniform = Objects.requireNonNull(createUniform(arena, name, type), "No given uniform '" + name + "' found");
+        final GLUniform uniform = Objects.requireNonNull(createUniform(name, type), "No given uniform '" + name + "' found");
         switch (type) {
             case INT -> uniform.set(values.get(0).getAsInt());
             case VEC4 -> uniform.set(
@@ -134,8 +139,8 @@ public final class GLProgram implements AutoCloseable {
         }
     }
 
-    private GLUniform createUniform(Arena arena, String name, GLUniform.Type type) {
-        final int location = GL.getUniformLocation(arena, id, name);
+    private GLUniform createUniform(String name, GLUniform.Type type) {
+        final int location = GL.getUniformLocation(id, name);
         if (location == -1) return null;
 
         final GLUniform uniform = new GLUniform(this, location, type);

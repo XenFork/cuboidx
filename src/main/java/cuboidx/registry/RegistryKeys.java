@@ -19,37 +19,20 @@
 package cuboidx.registry;
 
 import cuboidx.util.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
+import cuboidx.world.block.BlockType;
+import cuboidx.world.entity.EntityType;
 
 /**
- * @param <T> type of the value
  * @author squid233
  * @since 0.1.0
  */
-public record RegistryKey<T>(@Nullable RegistryKey<T> parent, ResourceLocation location) {
-    /**
-     * Creates a registry key.
-     *
-     * @param parent   the parent registry key.
-     * @param location the location.
-     * @return the registry key.
-     */
-    public static <T> RegistryKey<T> of(RegistryKey<T> parent, ResourceLocation location) {
-        return new RegistryKey<>(parent, location);
-    }
+public final class RegistryKeys {
+    public static final RegistryKey<?> ROOT = new RegistryKey<>(null, ResourceLocation.cuboidx("root"));
+    public static final RegistryKey<BlockType> BLOCK_TYPE = of("block_type");
+    public static final RegistryKey<EntityType> ENTITY_TYPE = of("entity_type");
 
-    /**
-     * Creates a child registry key.
-     *
-     * @param location the location of the child key.
-     * @return the registry key.
-     */
-    public RegistryKey<T> child(ResourceLocation location) {
-        return of(this, location);
-    }
-
-    @Override
-    public String toString() {
-        return "RegistryKey{" + parent() + "/" + location() + "}";
+    @SuppressWarnings("unchecked")
+    private static <T> RegistryKey<T> of(String name) {
+        return RegistryKey.of((RegistryKey<T>) ROOT, ResourceLocation.cuboidx(name));
     }
 }

@@ -23,7 +23,7 @@ import cuboidx.util.math.MathUtil;
 import cuboidx.util.pool.Poolable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import overrungl.RuntimeHelper;
+import overrungl.util.MemoryUtil;
 
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
@@ -110,8 +110,8 @@ public final class BufferedVertexBuilder implements Poolable, VertexBuilder, Aut
     public int end(MemorySegment outDataSize, MemorySegment data, MemorySegment indexData) {
         final long dataSize = sequenceLayout.byteOffset(PathElement.sequenceElement(vertexCount));
 
-        if (RuntimeHelper.isNullptr(data)) {
-            if (RuntimeHelper.isNullptr(indexData) && !RuntimeHelper.isNullptr(outDataSize)) {
+        if (MemoryUtil.isNullptr(data)) {
+            if (MemoryUtil.isNullptr(indexData) && !MemoryUtil.isNullptr(outDataSize)) {
                 outDataSize.set(ValueLayout.JAVA_LONG, 0, dataSize);
             }
             return indexCount;
@@ -124,7 +124,7 @@ public final class BufferedVertexBuilder implements Poolable, VertexBuilder, Aut
         if (vertexCount == 0 || indexCount == 0) return 0;
 
         MemorySegment.copy(this.data, 0, data, 0, dataSize);
-        if (!RuntimeHelper.isNullptr(indexData))
+        if (!MemoryUtil.isNullptr(indexData))
             MemorySegment.copy(this.indexData, 0, indexData, 0, (long) indexCount << 2);
 
         drawing = false;

@@ -45,6 +45,7 @@ public final class GameRenderer implements AutoCloseable {
         this.client = client;
         positionColorProgram = loadProgram("core/position_color", VertexLayout.POSITION_COLOR);
         positionColorTextureProgram = loadProgram("core/position_color_texture", VertexLayout.POSITION_COLOR_TEXTURE);
+
         final Set<ResourceLocation> textures = new HashSet<>();
         for (var e : Registries.BLOCK_TYPE) {
             for (Direction direction : Direction.list()) {
