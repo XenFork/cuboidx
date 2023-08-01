@@ -31,7 +31,9 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
 import overrungl.opengl.GL;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -139,11 +141,16 @@ public final class WorldRenderer implements AutoCloseable {
         );
         client.camera().lerp(partialTick);
         final Vector3d pos = client.camera().lerpPosition();
-        RenderSystem.viewMatrix().translation(
-            (float) -pos.x(),
-            (float) -pos.y(),
-            (float) -pos.z()
-        );
+        final Vector3d rotation = client.camera().rotation();
+        RenderSystem.viewMatrix()
+            .rotationXYZ(
+                (float) -rotation.x(),
+                (float) -rotation.y(),
+                (float) -rotation.z())
+            .translate(
+                (float) -pos.x(),
+                (float) -pos.y(),
+                (float) -pos.z());
         RenderSystem.updateFrustum();
         final int currentProgram = GLStateMgr.currentProgram();
         RenderSystem.useProgram(client.gameRenderer().positionColorTextureProgram(), program -> {

@@ -18,7 +18,7 @@
 
 package cuboidx.client.render.world;
 
-import cuboidx.world.entity.PlayerEntity;
+import cuboidx.world.entity.Entity;
 import org.joml.FrustumIntersection;
 
 import java.util.Comparator;
@@ -28,11 +28,11 @@ import java.util.Comparator;
  * @since 0.1.0
  */
 public final class DirtyChunkSorter implements Comparator<ClientChunk> {
-    private final PlayerEntity player;
+    private final Entity entity;
     private final FrustumIntersection frustum;
 
-    public DirtyChunkSorter(PlayerEntity player, FrustumIntersection frustum) {
-        this.player = player;
+    public DirtyChunkSorter(Entity entity, FrustumIntersection frustum) {
+        this.entity = entity;
         this.frustum = frustum;
     }
 
@@ -42,8 +42,8 @@ public final class DirtyChunkSorter implements Comparator<ClientChunk> {
         final boolean visible2 = o2.isVisible(frustum);
         if (visible1 && !visible2) return -1;
         if (!visible1 && visible2) return 1;
-        final double distanceSqr1 = o1.distanceSqr(player);
-        final double distanceSqr2 = o2.distanceSqr(player);
+        final double distanceSqr1 = o1.distanceSqr(entity);
+        final double distanceSqr2 = o2.distanceSqr(entity);
         if (distanceSqr1 < distanceSqr2) return -1;
         if (distanceSqr1 > distanceSqr2) return 1;
         final long dirtyTime1 = o1.dirtyTime();

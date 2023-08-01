@@ -34,14 +34,14 @@ import java.util.Map;
 public class BaseRegistry<T> implements MutableRegistry<T> {
     private static final Logger logger = LogManager.getLogger();
     // TODO: 2023/6/17 primitive generic
-    private final RegistryKey registryKey;
+    private final RegistryKey<T> registryKey;
     protected final Map<ResourceLocation, T> idToEntry;
     protected final Map<T, ResourceLocation> entryToId;
     protected final Map<Integer, T> rawIdToEntry;
     protected final Map<T, Integer> entryToRawId;
     private int nextId = 0;
 
-    public BaseRegistry(RegistryKey registryKey, int initialCapacity) {
+    public BaseRegistry(RegistryKey<T> registryKey, int initialCapacity) {
         this.registryKey = registryKey;
         idToEntry = HashMap.newHashMap(initialCapacity);
         entryToId = HashMap.newHashMap(initialCapacity);
@@ -49,7 +49,7 @@ public class BaseRegistry<T> implements MutableRegistry<T> {
         entryToRawId = HashMap.newHashMap(initialCapacity);
     }
 
-    public BaseRegistry(RegistryKey registryKey) {
+    public BaseRegistry(RegistryKey<T> registryKey) {
         this(registryKey, 256);
     }
 
@@ -60,7 +60,7 @@ public class BaseRegistry<T> implements MutableRegistry<T> {
     }
 
     @Override
-    public RegistryKey registryKey() {
+    public RegistryKey<T> registryKey() {
         return registryKey;
     }
 

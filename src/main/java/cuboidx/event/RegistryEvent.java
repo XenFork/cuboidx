@@ -16,27 +16,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.registry;
+package cuboidx.event;
 
+import cuboidx.registry.MutableRegistry;
+import cuboidx.registry.Registry;
+import cuboidx.registry.RegistryKey;
+import cuboidx.registry.RegistryKeys;
 import cuboidx.util.ResourceLocation;
-import cuboidx.world.block.BlockType;
-import cuboidx.world.entity.EntityType;
 
 /**
+ * @param <T> the type of the registry entry
  * @author squid233
  * @since 0.1.0
  */
-public final class RegistryKeys {
-    private static final RegistryKey<?> ROOT = new RegistryKey<>(null, ResourceLocation.cuboidx("root"));
-    public static final RegistryKey<BlockType> BLOCK_TYPE = of("block_type");
-    public static final RegistryKey<EntityType> ENTITY_TYPE = of("entity_type");
+public record RegistryEvent<T>(MutableRegistry<T> registry) implements Event<RegistryEvent<T>> {
+    private static final RegistryKey<?> ROOT = RegistryKey.of(RegistryKeys.root(), ResourceLocation.cuboidx("registry_event"));
 
     @SuppressWarnings("unchecked")
-    public static <T> RegistryKey<T> root() {
-        return (RegistryKey<T>) ROOT;
+    public static <T> RegistryKey<RegistryEvent<T>> id(Registry<T> registry) {
+        final ResourceLocation location = registry.registryKey().location();
+        return RegistryKey.of((RegistryKey<RegistryEvent<T>>) ROOT, location);
     }
 
-    private static <T> RegistryKey<T> of(String name) {
-        return RegistryKey.of(root(), ResourceLocation.cuboidx(name));
+    @Override
+    public RegistryKey<RegistryEvent<T>> id() {
+        return id(registry);
     }
 }

@@ -27,6 +27,7 @@ module cuboidx.core {
     exports cuboidx.client.render;
     exports cuboidx.client.texture;
     exports cuboidx.client;
+    exports cuboidx.event;
     exports cuboidx.registry;
     exports cuboidx.util.math;
     exports cuboidx.util.pool;
@@ -51,4 +52,5 @@ module cuboidx.core {
     requires org.apache.logging.log4j.core;
     requires org.joml;
     requires static org.jetbrains.annotations;
+    requires java.desktop;
 }

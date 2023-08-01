@@ -18,10 +18,17 @@
 
 package cuboidx.world;
 
+import cuboidx.util.pool.KeyedPool;
 import cuboidx.world.block.BlockType;
 import cuboidx.world.block.BlockTypes;
+import cuboidx.world.entity.Entity;
+import cuboidx.world.entity.EntityType;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * @author squid233
@@ -32,6 +39,8 @@ public final class World {
     private final int height;
     private final int depth;
     private final BlockType[] blocks;
+    private final KeyedPool<EntityType, Entity> entityPool = new KeyedPool<>(Entity::new);
+    private final List<Entity> entities = new ArrayList<>();
 
     public World(int width, int height, int depth) {
         this.width = width;
@@ -47,6 +56,27 @@ public final class World {
                 setBlock(x, 16, z, BlockTypes.GRASS_BLOCK);
             }
         }
+    }
+
+    public Entity spawn(EntityType entityType, double x, double y, double z) {
+        final Entity entity = entityPool.poll(entityType);
+        entity.setWorld(this);
+        entity.setUuid(UUID.randomUUID());
+        entity.spawn(x, y, z);
+        entities.add(entity);
+        return entity;
+    }
+
+    public @Nullable Entity findEntity(UUID uuid) {
+        for (Entity entity : entities) {
+            if (uuid.equals(entity.uuid())) return entity;
+        }
+        return null;
+    }
+
+    public void removeEntity(Entity entity) {
+        entities.remove(entity);
+        entityPool.free(entity.type(), entity);
     }
 
     public boolean isInBound(int x, int y, int z) {

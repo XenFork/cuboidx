@@ -19,13 +19,17 @@
 package cuboidx.client.render;
 
 import cuboidx.client.CuboidX;
+import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLProgram;
+import cuboidx.client.gl.GLStateMgr;
+import cuboidx.client.gl.RenderSystem;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
 import cuboidx.util.math.Direction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import overrungl.opengl.GL;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -66,6 +70,36 @@ public final class GameRenderer implements AutoCloseable {
 
     public void render(double partialTick) {
         client.worldRenderer().renderChunks(partialTick);
+        renderGui(partialTick);
+    }
+
+    private void renderGui(double partialTick) {
+        GL.clear(GL.DEPTH_BUFFER_BIT);
+        RenderSystem.projectionMatrix().setOrtho(0, client.width(), 0, client.height(), -100, 100);
+        RenderSystem.viewMatrix().identity();
+        // draw crossing
+        RenderSystem.modelMatrix().pushMatrix().translation(client.width() * 0.5f, client.height() * 0.5f, 0);
+        final int currentProgram = GLStateMgr.currentProgram();
+        RenderSystem.useProgram(positionColorProgram(), p -> {
+            p.projectionMatrix().set(RenderSystem.projectionMatrix());
+            p.modelViewMatrix().set(RenderSystem.modelViewMatrix());
+            p.specifyUniforms();
+        });
+        RenderSystem.modelMatrix().popMatrix();
+        final Tessellator t = Tessellator.getInstance();
+        t.begin(GLDrawMode.QUADS);
+        t.enableAutoIndices();
+        t.color(1, 1, 1, 1);
+        t.vertex(-8, 1, 0).emit();
+        t.vertex(-8, -1, 0).emit();
+        t.vertex(8, -1, 0).emit();
+        t.vertex(8, 1, 0).emit();
+        t.vertex(-1, 8, 0).emit();
+        t.vertex(-1, -8, 0).emit();
+        t.vertex(1, -8, 0).emit();
+        t.vertex(1, 8, 0).emit();
+        t.end();
+        RenderSystem.useProgram(currentProgram);
     }
 
     public GLProgram positionColorProgram() {
@@ -80,7 +114,7 @@ public final class GameRenderer implements AutoCloseable {
     public void close() {
         if (positionColorProgram != null) positionColorProgram.close();
         if (positionColorTextureProgram != null) positionColorTextureProgram.close();
-        Tessellator.free();
+        Tessellator.getInstance().dispose();
         logger.info("Cleaned up GameRenderer");
     }
 }

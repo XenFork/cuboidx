@@ -27,7 +27,7 @@ import cuboidx.util.math.Direction;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockType;
 import cuboidx.world.chunk.Chunk;
-import cuboidx.world.entity.PlayerEntity;
+import cuboidx.world.entity.Entity;
 import org.joml.FrustumIntersection;
 import overrungl.opengl.GL;
 import overrungl.util.MemoryStack;
@@ -285,12 +285,12 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
         return states;
     }
 
-    public double distanceSqr(PlayerEntity player) {
-        return player.position().distanceSquared(x(), y(), z());
+    public double distanceSqr(Entity entity) {
+        return entity.position().distanceSquared(x(), y(), z());
     }
 
     public boolean isVisible(FrustumIntersection frustum) {
-        return frustum.testAab(x0(), y0(), z0(), x1(), y1(), z1());
+        return frustum.testAab(x0(), y0(), z0(), x1() + 1, y1() + 1, z1() + 1);
     }
 
     @Override

@@ -21,6 +21,7 @@ package cuboidx.util.pool;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -82,5 +83,14 @@ public final class KeyedPool<K, T extends Poolable> {
      */
     public @UnmodifiableView Map<K, List<T>> map() {
         return mapView;
+    }
+
+    /**
+     * Disposes all instances in this pool.
+     *
+     * @param action the action
+     */
+    public void dispose(BiConsumer<K, T> action) {
+        map().forEach((k, l) -> l.forEach(t -> action.accept(k, t)));
     }
 }

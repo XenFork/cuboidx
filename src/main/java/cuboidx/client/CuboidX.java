@@ -18,18 +18,22 @@
 
 package cuboidx.client;
 
+import cuboidx.client.event.CursorEvent;
 import cuboidx.client.render.Camera;
 import cuboidx.client.render.GameRenderer;
 import cuboidx.client.render.world.BlockRenderer;
 import cuboidx.client.render.world.WorldRenderer;
 import cuboidx.client.texture.TextureManager;
+import cuboidx.event.EventBus;
+import cuboidx.event.RegistryEvent;
 import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockTypes;
-import cuboidx.world.entity.PlayerEntity;
+import cuboidx.world.entity.Entity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.joml.Math;
 import org.overrun.timer.Timer;
 import overrungl.OverrunGL;
 import overrungl.glfw.GLFW;
@@ -55,15 +59,18 @@ public final class CuboidX implements Runnable {
     private static final Logger logger = LogManager.getLogger();
     public static final String VERSION = "0.1.0";
     public static final double TPS = 20.0;
+    public static final EventBus EVENT_BUS = new EventBus();
+    private static final double MOUSE_SENSITIVITY = 0.15;
     private Thread renderThread;
     private MemorySegment window;
+    private Mouse mouse;
     private final AtomicInteger width = new AtomicInteger();
     private final AtomicInteger height = new AtomicInteger();
     private final AtomicBoolean resized = new AtomicBoolean();
     private final AtomicBoolean shouldRender = new AtomicBoolean(true);
     private final AtomicLong partialTick = new AtomicLong();
     private final AtomicLong currentTime = new AtomicLong();
-    private final DoubleSupplier currentTimeGetter = () -> Double.longBitsToDouble(currentTime.get());
+    private final DoubleSupplier currentTimeGetter = () -> AtomicDouble.get(currentTime);
     private Timer timer;
     private Timer clientTimer;
     private TextureManager textureManager;
@@ -72,7 +79,7 @@ public final class CuboidX implements Runnable {
     private BlockRenderer blockRenderer;
     private World world;
     private WorldRenderer worldRenderer;
-    private final PlayerEntity player = new PlayerEntity();
+    private Entity player;
 
     private CuboidX() {
         OverrunGL.setApiLogger(logger::error);
@@ -85,36 +92,40 @@ public final class CuboidX implements Runnable {
         GLFW.windowHint(GLFW.OPENGL_FORWARD_COMPAT, true);
         window = GLFW.createWindow(854, 480, "CuboidX " + VERSION, MemorySegment.NULL, MemorySegment.NULL);
         CheckUtil.checkNotNullptr(window, "Failed to create the GLFW window");
-        GLFW.setFramebufferSizeCallback(window, (h /* TODO: _ doesn't support? */, width, height) -> {
-            this.width.set(width);
-            this.height.set(height);
-            this.resized.set(true);
-        });
+        mouse = new Mouse(window);
+        EVENT_BUS.addListener(CursorEvent.Pos.ID, this::onCursorPos);
+        GLFW.setKeyCallback(window, this::onKey);
+        GLFW.setFramebufferSizeCallback(window, this::onResize);
         GLFW.setWindowIconifyCallback(window, (h, iconified) -> this.shouldRender.set(!iconified));
 
         final GLFWVidMode.Value videoMode = GLFW.getVideoMode(GLFW.getPrimaryMonitor());
         if (videoMode != null) {
             final Pair.OfInt size = GLFW.getWindowSize(window);
             GLFW.setWindowPos(window,
-                    (videoMode.width() - size.x()) / 2,
-                    (videoMode.height() - size.y()) / 2);
+                (videoMode.width() - size.x()) / 2,
+                (videoMode.height() - size.y()) / 2);
         }
 
         try {
             logger.info("Starting CuboidX {}", VERSION);
             logger.info("""
-                    Detected 2 mods:
-                        - {} {}
-                        - java {}""", ResourceLocation.DEFAULT_NAMESPACE, VERSION, Runtime.version());
+                Detected 2 mods:
+                    - {} {}
+                    - java {}""", ResourceLocation.DEFAULT_NAMESPACE, VERSION, Runtime.version());
 
             final Pair.OfInt size = GLFW.getFramebufferSize(window);
             width.set(size.x());
             height.set(size.y());
 
             BlockTypes.load();
+            EVENT_BUS.post(new RegistryEvent<>(Registries.BLOCK_TYPE));
             logger.info("Registered {} blocks", Registries.BLOCK_TYPE.size());
+            EntityTypes.load();
+            EVENT_BUS.post(new RegistryEvent<>(Registries.ENTITY_TYPE));
+            logger.info("Registered {} entities", Registries.ENTITY_TYPE.size());
+
             world = new World(256, 64, 256);
-            player.setPosition(128, 20, 128);
+            player = world.spawn(EntityTypes.PLAYER, 128, 20, 128);
 
             timer = Timer.ofGetter(TPS, currentTimeGetter);
 
@@ -127,11 +138,11 @@ public final class CuboidX implements Runnable {
             renderThread.start();
             try {
                 while (!GLFW.windowShouldClose(window)) {
-                    currentTime.set(Double.doubleToLongBits(GLFW.getTime()));
+                    AtomicDouble.set(currentTime, GLFW.getTime());
                     timer.advanceTime();
                     timer.performTicks(this::tick);
                     lateUpdate();
-                    partialTick.set(Double.doubleToLongBits(timer.partialTick()));
+                    AtomicDouble.set(partialTick, timer.partialTick());
                     GLFW.pollEvents();
                 }
                 logger.info("Stopping!");
@@ -153,8 +164,32 @@ public final class CuboidX implements Runnable {
         }
     }
 
+    private void onCursorPos(CursorEvent.Pos event) {
+        if (mouse.mouseGrabbed()) {
+            player.rotate(
+                -Math.toRadians(event.deltaY() * MOUSE_SENSITIVITY),
+                -Math.toRadians(event.deltaX() * MOUSE_SENSITIVITY),
+                0);
+        }
+    }
+
+    private void onKey(MemorySegment window, int key, int scancode, int action, int mods) {
+        if (action == GLFW.RELEASE) {
+            if (key == GLFW.KEY_GRAVE_ACCENT) {
+                mouse.setMouseGrabbed(!mouse.mouseGrabbed());
+            }
+        }
+    }
+
+    private void onResize(MemorySegment window, int width, int height) {
+        this.width.set(width);
+        this.height.set(height);
+        this.resized.set(true);
+    }
+
     public void tick() {
         player.tick();
+        camera.tick();
         double xo = 0.0, yo = 0.0, zo = 0.0;
         if (GLFW.getKey(window, GLFW.KEY_A) == GLFW.PRESS) xo--;
         if (GLFW.getKey(window, GLFW.KEY_D) == GLFW.PRESS) xo++;
@@ -167,8 +202,7 @@ public final class CuboidX implements Runnable {
     }
 
     public void lateUpdate() {
-        camera.update();
-        camera.moveToPlayer(player);
+        camera.moveToEntity(player);
     }
 
     public void clientRender(double partialTick) {
@@ -202,6 +236,7 @@ public final class CuboidX implements Runnable {
     }
 
     private void clientClose() {
+        logger.info("Cleaning up client resources");
         gameRenderer.close();
         textureManager.close();
         worldRenderer.close();
@@ -227,7 +262,7 @@ public final class CuboidX implements Runnable {
     }
 
     public double partialTick() {
-        return Double.longBitsToDouble(partialTick.get());
+        return AtomicDouble.get(partialTick);
     }
 
     public TextureManager textureManager() {
@@ -254,7 +289,7 @@ public final class CuboidX implements Runnable {
         return worldRenderer;
     }
 
-    public PlayerEntity player() {
+    public Entity player() {
         return player;
     }
 

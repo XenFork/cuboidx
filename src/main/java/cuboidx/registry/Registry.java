@@ -33,7 +33,7 @@ public interface Registry<T> extends Iterable<Map.Entry<ResourceLocation, T>> {
      */
     int INVALID_RAW_ID = -1;
 
-    RegistryKey registryKey();
+    RegistryKey<T> registryKey();
 
     T get(ResourceLocation location);
 

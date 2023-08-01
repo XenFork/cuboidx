@@ -55,7 +55,6 @@ public final class Tessellator implements VertexBuilder {
     private static final VarHandle ca = varHandle(VertexFormat.COLOR, 3);
     private static final VarHandle tu = varHandle(VertexFormat.UV0, 0);
     private static final VarHandle tv = varHandle(VertexFormat.UV0, 1);
-    private static Tessellator instance;
     private final MemorySegment data = MemoryUtil.calloc(1, LAYOUT);
     private final MemorySegment indexData = MemoryUtil.calloc(MAX_INDEX_COUNT, ValueLayout.JAVA_INT);
     private float x, y, z;
@@ -71,16 +70,10 @@ public final class Tessellator implements VertexBuilder {
     }
 
     public static Tessellator getInstance() {
-        if (instance == null) {
-            instance = new Tessellator();
+        class Holder {
+            private static final Tessellator INSTANCE = new Tessellator();
         }
-        return instance;
-    }
-
-    public static void free() {
-        if (instance != null) {
-            instance.close();
-        }
+        return Holder.INSTANCE;
     }
 
     private static VarHandle varHandle(VertexFormat format, long index) {
@@ -202,7 +195,7 @@ public final class Tessellator implements VertexBuilder {
         vertexCount++;
     }
 
-    private void close() {
+    public void dispose() {
         MemoryUtil.free(data);
         MemoryUtil.free(indexData);
         if (GL.isVertexArray(vao)) RenderSystem.deleteVertexArray(vao);

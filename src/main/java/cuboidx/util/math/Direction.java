@@ -25,23 +25,24 @@ import java.util.List;
  * @since 0.1.0
  */
 public enum Direction {
-    WEST(0, 1, -1, 0, 0),
-    EAST(1, 0, 1, 0, 0),
-    DOWN(2, 3, 0, -1, 0),
-    UP(3, 2, 0, 1, 0),
-    NORTH(4, 5, 0, 0, -1),
-    SOUTH(5, 4, 0, 0, 1);
+    WEST("West", 0, 1, -1, 0, 0),
+    EAST("East", 1, 0, 1, 0, 0),
+    DOWN("Down", 2, 3, 0, -1, 0),
+    UP("Up", 3, 2, 0, 1, 0),
+    NORTH("North", 4, 5, 0, 0, -1),
+    SOUTH("South", 5, 4, 0, 0, 1);
 
     private static final Direction[] VALUES = values();
     private static final List<Direction> LIST = List.of(VALUES);
-    public static final int COUNT = VALUES.length;
+    private final String toStringValue;
     private final int id;
     private final int oppositeId;
     private final int axisX;
     private final int axisY;
     private final int axisZ;
 
-    Direction(int id, int oppositeId, int axisX, int axisY, int axisZ) {
+    Direction(String toStringValue, int id, int oppositeId, int axisX, int axisY, int axisZ) {
+        this.toStringValue = toStringValue;
         this.id = id;
         this.oppositeId = oppositeId;
         this.axisX = axisX;
@@ -79,5 +80,10 @@ public enum Direction {
 
     public int axisZ() {
         return axisZ;
+    }
+
+    @Override
+    public String toString() {
+        return toStringValue;
     }
 }

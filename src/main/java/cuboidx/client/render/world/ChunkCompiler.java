@@ -41,6 +41,6 @@ public final class ChunkCompiler implements AutoCloseable {
 
     @Override
     public void close() {
-        pool.map().values().forEach(l -> l.forEach(BufferedVertexBuilder::close));
+        pool.dispose((l, b) -> b.close());
     }
 }

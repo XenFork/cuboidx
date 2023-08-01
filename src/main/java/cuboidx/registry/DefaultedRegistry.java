@@ -30,7 +30,7 @@ public final class DefaultedRegistry<T> extends BaseRegistry<T> {
     private final Supplier<T> lazyDefaultValue;
     private T defaultValue;
 
-    public DefaultedRegistry(RegistryKey registryKey, Supplier<T> lazyDefaultValue) {
+    public DefaultedRegistry(RegistryKey<T> registryKey, Supplier<T> lazyDefaultValue) {
         super(registryKey);
         this.lazyDefaultValue = lazyDefaultValue;
     }

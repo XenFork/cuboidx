@@ -38,16 +38,6 @@ public record RegistryKey<T>(@Nullable RegistryKey<T> parent, ResourceLocation l
         return new RegistryKey<>(parent, location);
     }
 
-    /**
-     * Creates a child registry key.
-     *
-     * @param location the location of the child key.
-     * @return the registry key.
-     */
-    public RegistryKey<T> child(ResourceLocation location) {
-        return of(this, location);
-    }
-
     @Override
     public String toString() {
         return "RegistryKey{" + parent() + "/" + location() + "}";

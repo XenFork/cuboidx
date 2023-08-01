@@ -18,7 +18,7 @@
 
 package cuboidx.client.render;
 
-import cuboidx.world.entity.PlayerEntity;
+import cuboidx.world.entity.Entity;
 import org.joml.Vector3d;
 import org.overrun.timer.Timer;
 
@@ -30,18 +30,19 @@ public final class Camera {
     private final Vector3d prevPosition = new Vector3d();
     private final Vector3d position = new Vector3d();
     private final Vector3d lerpPosition = new Vector3d();
+    private final Vector3d rotation = new Vector3d();
+
+    public void tick() {
+        prevPosition.set(position);
+    }
 
     public void setPosition(double x, double y, double z) {
         position.set(x, y, z);
     }
 
-    public void update() {
-        prevPosition.set(position);
-    }
-
-    public void moveToPlayer(PlayerEntity player) {
-        final Vector3d pos = player.position();
-        position.set(pos.x(), pos.y(), pos.z());
+    public void moveToEntity(Entity entity) {
+        position.set(entity.position());
+        rotation.set(entity.rotation());
     }
 
     /**
@@ -63,5 +64,9 @@ public final class Camera {
 
     public Vector3d lerpPosition() {
         return lerpPosition;
+    }
+
+    public Vector3d rotation() {
+        return rotation;
     }
 }

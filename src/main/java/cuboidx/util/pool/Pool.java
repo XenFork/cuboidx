@@ -21,6 +21,7 @@ package cuboidx.util.pool;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -44,7 +45,46 @@ public final class Pool<T extends Poolable> {
         this.constructor = constructor;
     }
 
+    public Pool(Supplier<T> constructor) {
+        this(128, constructor);
+    }
+
+    public T poll() {
+        for (int i = 0, sz = list().size(); i < sz; i++) {
+            T t = list.get(i);
+            final Boolean b = availableId.get(i);
+            if (b != null && b) {
+                availableId.put(i, false);
+                t.reset();
+                return t;
+            }
+        }
+        // no available instance. create it
+        final T t = constructor.get();
+        list.add(t);
+        availableId.put(list.size() - 1, false);
+        return t;
+    }
+
+    public void free(T t) {
+        final int i = list.indexOf(t);
+        if (i == -1) return;
+        availableId.put(i, true);
+    }
+
+    /**
+     * {@return an unmodifiable view of the internal list}
+     */
     public @UnmodifiableView List<T> list() {
         return listView;
+    }
+
+    /**
+     * Disposes all instances in this pool.
+     *
+     * @param action the action
+     */
+    public void dispose(Consumer<T> action) {
+        list().forEach(action);
     }
 }
