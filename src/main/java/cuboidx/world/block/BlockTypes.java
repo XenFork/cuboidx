@@ -20,13 +20,14 @@ package cuboidx.world.block;
 
 import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
+import cuboidx.util.math.AABBox;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
 public final class BlockTypes {
-    public static final BlockType AIR = of(0, "air", new BlockType.Builder().air());
+    public static final BlockType AIR = of(0, "air", new BlockType.Builder().air().outlineShape(AABBox::empty));
     public static final BlockType GRASS_BLOCK = of(1, "grass_block", new BlockType.Builder()
         .texture(direction -> switch (direction) {
             case WEST, EAST, NORTH, SOUTH -> ResourceLocation.cuboidx("block/grass_block_side");

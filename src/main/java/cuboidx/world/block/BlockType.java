@@ -19,12 +19,14 @@
 package cuboidx.world.block;
 
 import cuboidx.util.ResourceLocation;
+import cuboidx.util.math.AABBox;
 import cuboidx.util.math.Direction;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author squid233
@@ -33,10 +35,13 @@ import java.util.function.Function;
 public final class BlockType {
     private final boolean air;
     private final Map<Direction, ResourceLocation> texture; // TODO: Use Function instead of Map cache; use block state model instead of Function
+    private final Supplier<AABBox> outlineShape;
 
     private BlockType(boolean air,
-                      Function<Direction, ResourceLocation> texture) {
+                      Function<Direction, ResourceLocation> texture,
+                      Supplier<AABBox> outlineShape) {
         this.air = air;
+        this.outlineShape = outlineShape;
         if (air) {
             this.texture = Map.of();
         } else {
@@ -54,6 +59,7 @@ public final class BlockType {
     public static final class Builder {
         private boolean air;
         private Function<Direction, ResourceLocation> texture;
+        private Supplier<AABBox> outlineShape = AABBox::fullCube;
 
         public Builder air() {
             this.air = true;
@@ -65,11 +71,16 @@ public final class BlockType {
             return this;
         }
 
+        public Builder outlineShape(Supplier<AABBox> outlineShape) {
+            this.outlineShape = outlineShape;
+            return this;
+        }
+
         public BlockType build() {
             return new BlockType(
                 air,
-                air ? null : Objects.requireNonNull(texture, "texture")
-            );
+                air ? null : Objects.requireNonNull(texture, "texture"),
+                Objects.requireNonNull(outlineShape, "outlineShape"));
         }
     }
 
@@ -79,5 +90,9 @@ public final class BlockType {
 
     public ResourceLocation texture(Direction direction) {
         return texture.get(direction);
+    }
+
+    public AABBox outlineShape() {
+        return outlineShape.get();
     }
 }

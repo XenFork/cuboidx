@@ -16,45 +16,44 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package cuboidx.client.gl;
+package cuboidx.world;
 
-import overrungl.opengl.GL;
+import cuboidx.world.block.BlockType;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public enum GLDrawMode {
-    LINES(GL.LINES, 2, 0, 1),
-    TRIANGLES(GL.TRIANGLES, 3, 0, 1, 2),
-    QUADS(GL.TRIANGLES, 4, 0, 1, 2, 0, 2, 3),
-    ;
+public final /* value */ class HitResult {
+    private boolean missed;
+    private int x, y, z;
+    private BlockType block;
 
-    private final int enumValue;
-    private final int vertexCount;
-    private final int indexCount;
-    private final int[] indices;
-
-    GLDrawMode(int enumValue, int vertexCount, int... indices) {
-        this.enumValue = enumValue;
-        this.vertexCount = vertexCount;
-        this.indexCount = indices.length;
-        this.indices = indices;
+    public void update(boolean missed, int x, int y, int z, BlockType block) {
+        this.missed = missed;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.block = block;
     }
 
-    public int enumValue() {
-        return enumValue;
+    public boolean missed() {
+        return missed;
     }
 
-    public int vertexCount() {
-        return vertexCount;
+    public int x() {
+        return x;
     }
 
-    public int indexCount() {
-        return indexCount;
+    public int y() {
+        return y;
     }
 
-    public int[] indices() {
-        return indices;
+    public int z() {
+        return z;
+    }
+
+    public BlockType block() {
+        return block;
     }
 }

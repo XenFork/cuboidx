@@ -19,18 +19,25 @@
 package cuboidx.client.render.world;
 
 import cuboidx.client.CuboidX;
+import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.client.render.BufferedVertexBuilder;
+import cuboidx.client.render.Tessellator;
 import cuboidx.client.texture.TextureAtlas;
+import cuboidx.util.math.AABBox;
+import cuboidx.world.HitResult;
 import cuboidx.world.World;
+import cuboidx.world.block.BlockType;
 import cuboidx.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3d;
+import org.joml.*;
 import overrungl.opengl.GL;
 
+import java.lang.Math;
+import java.lang.Runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,6 +69,9 @@ public final class WorldRenderer implements AutoCloseable {
     private final List<ClientChunk> dirtyChunks;
     private final ChunkCompiler compiler = new ChunkCompiler();
     private final ExecutorService threadPool;
+    private final HitResult hitResult = new HitResult();
+    private final Vector3f hitOrientation = new Vector3f();
+    private final Vector2d hitNearFar = new Vector2d();
 
     public WorldRenderer(CuboidX client, World world) {
         this.client = client;
@@ -140,17 +150,7 @@ public final class WorldRenderer implements AutoCloseable {
             1000.0f
         );
         client.camera().lerp(partialTick);
-        final Vector3d pos = client.camera().lerpPosition();
-        final Vector3d rotation = client.camera().rotation();
-        RenderSystem.viewMatrix()
-            .rotationXYZ(
-                (float) -rotation.x(),
-                (float) -rotation.y(),
-                (float) -rotation.z())
-            .translate(
-                (float) -pos.x(),
-                (float) -pos.y(),
-                (float) -pos.z());
+        client.camera().viewMatrix(RenderSystem.viewMatrix());
         RenderSystem.updateFrustum();
         final int currentProgram = GLStateMgr.currentProgram();
         RenderSystem.useProgram(client.gameRenderer().positionColorTextureProgram(), program -> {
@@ -173,6 +173,112 @@ public final class WorldRenderer implements AutoCloseable {
 
         RenderSystem.disableCullFace();
         RenderSystem.disableDepthTest();
+
+        getHitBlock();
+    }
+
+    public void renderHitResult() {
+        if (!hitResult.missed()) {
+            final AABBox box = hitResult.block().outlineShape().move(
+                hitResult.x(),
+                hitResult.y(),
+                hitResult.z());
+            final float x0 = (float) box.minX();
+            final float y0 = (float) box.minY();
+            final float z0 = (float) box.minZ();
+            final float x1 = (float) box.maxX();
+            final float y1 = (float) box.maxY();
+            final float z1 = (float) box.maxZ();
+
+            RenderSystem.lineWidth(2);
+            RenderSystem.enableLineSmooth();
+            RenderSystem.polygonOffset(-0.1f, 0.2f);
+            RenderSystem.enablePolygonOffsetLine();
+
+            final int currentProgram = GLStateMgr.currentProgram();
+            RenderSystem.useProgram(client.gameRenderer().positionColorProgram(), program -> {
+                program.projectionMatrix().set(RenderSystem.projectionMatrix());
+                program.modelViewMatrix().set(RenderSystem.modelViewMatrix());
+                program.specifyUniforms();
+            });
+
+            final Tessellator t = Tessellator.getInstance();
+            t.begin(GLDrawMode.LINES);
+            t.disableAutoIndices();
+            t.indices(
+                // x
+                3, 7, 1, 5, 0, 4, 2, 6,
+                // y
+                0, 2, 1, 3, 5, 7, 4, 6,
+                // z
+                2, 3, 0, 1, 4, 5, 6, 7
+            );
+            t.color(0, 0, 0, 1);
+            t.vertex(x0, y0, z0).emit(); // 0
+            t.vertex(x0, y0, z1).emit(); // 1
+            t.vertex(x0, y1, z0).emit(); // 2
+            t.vertex(x0, y1, z1).emit(); // 3
+            t.vertex(x1, y0, z0).emit(); // 4
+            t.vertex(x1, y0, z1).emit(); // 5
+            t.vertex(x1, y1, z0).emit(); // 6
+            t.vertex(x1, y1, z1).emit(); // 7
+            t.end();
+
+            RenderSystem.useProgram(currentProgram);
+
+            RenderSystem.lineWidth(1);
+            RenderSystem.disableLineSmooth();
+            RenderSystem.disablePolygonOffsetLine();
+        }
+    }
+
+    private void getHitBlock() {
+        final int pickRange = 5;
+        double closestDistance = Double.POSITIVE_INFINITY;
+        BlockType target = null;
+        int targetX = 0;
+        int targetY = 0;
+        int targetZ = 0;
+        final Vector3d pos = client.camera().lerpPosition();
+        final FrustumIntersection frustum = RenderSystem.frustum();
+        RenderSystem.viewMatrix().positiveZ(hitOrientation).negate();
+
+        final Vector3d playerPos = client.player().position();
+        final int orgX = (int) Math.floor(playerPos.x());
+        final int orgY = (int) Math.floor(playerPos.y());
+        final int orgZ = (int) Math.floor(playerPos.z());
+        final int x0 = orgX - pickRange;
+        final int y0 = orgY - pickRange;
+        final int z0 = orgZ - pickRange;
+        final int x1 = orgX + pickRange;
+        final int y1 = orgY + pickRange;
+        final int z1 = orgZ + pickRange;
+
+        for (int x = x0; x <= x1; x++) {
+            for (int y = y0; y <= y1; y++) {
+                for (int z = z0; z <= z1; z++) {
+                    final BlockType block = world.getBlock(x, y, z);
+                    final AABBox box = block.outlineShape().move(x, y, z);
+                    if (!box.isEmpty() && box.test(frustum)) {
+                        if (Intersectiond.intersectRayAab(
+                            pos.x(), pos.y(), pos.z(),
+                            hitOrientation.x(), hitOrientation.y(), hitOrientation.z(),
+                            box.minX(), box.minY(), box.minZ(),
+                            box.maxX(), box.maxY(), box.maxZ(),
+                            hitNearFar
+                        ) && hitNearFar.x < closestDistance) {
+                            closestDistance = hitNearFar.x();
+                            target = block;
+                            targetX = x;
+                            targetY = y;
+                            targetZ = z;
+                        }
+                    }
+                }
+            }
+        }
+
+        hitResult.update(target == null, targetX, targetY, targetZ, target);
     }
 
     @Override

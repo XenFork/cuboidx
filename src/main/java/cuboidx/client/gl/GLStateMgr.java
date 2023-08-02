@@ -33,6 +33,11 @@ public final class GLStateMgr {
     private static int depthFunc = GL.LESS;
     private static boolean cullFaceEnabled = false;
     private static int cullFaceMode = GL.BACK;
+    private static float lineWidth = 1;
+    private static boolean lineSmooth = false;
+    private static float polygonOffsetFactor = 0;
+    private static float polygonOffsetUnits = 0;
+    private static boolean polygonOffsetLine = false;
 
     public static void useProgram(int program) {
         if (currentProgram != program) {
@@ -148,5 +153,68 @@ public final class GLStateMgr {
 
     public static int cullFaceMode() {
         return cullFaceMode;
+    }
+
+    public static void lineWidth(float width) {
+        if (Float.compare(lineWidth, width) != 0) {
+            lineWidth = width;
+            GL.lineWidth(width);
+        }
+    }
+
+    public static float lineWidth() {
+        return lineWidth;
+    }
+
+    public static void enableLineSmooth() {
+        if (!lineSmooth) {
+            lineSmooth = true;
+            GL.enable(GL.LINE_SMOOTH);
+        }
+    }
+
+    public static void disableLineSmooth() {
+        if (lineSmooth) {
+            lineSmooth = false;
+            GL.disable(GL.LINE_SMOOTH);
+        }
+    }
+
+    public static boolean lineSmooth() {
+        return lineSmooth;
+    }
+
+    public static void polygonOffset(float factor, float units) {
+        if (Float.compare(polygonOffsetFactor, factor) != 0 || Float.compare(polygonOffsetUnits, units) != 0) {
+            polygonOffsetFactor = factor;
+            polygonOffsetUnits = units;
+            GL.polygonOffset(factor, units);
+        }
+    }
+
+    public static float polygonOffsetFactor() {
+        return polygonOffsetFactor;
+    }
+
+    public static float polygonOffsetUnits() {
+        return polygonOffsetUnits;
+    }
+
+    public static void enablePolygonOffsetLine() {
+        if (!polygonOffsetLine) {
+            polygonOffsetLine = true;
+            GL.enable(GL.POLYGON_OFFSET_LINE);
+        }
+    }
+
+    public static void disablePolygonOffsetLine() {
+        if (polygonOffsetLine) {
+            polygonOffsetLine = false;
+            GL.disable(GL.POLYGON_OFFSET_LINE);
+        }
+    }
+
+    public static boolean polygonOffsetLine() {
+        return polygonOffsetLine;
     }
 }

@@ -19,6 +19,7 @@
 package cuboidx.client;
 
 import cuboidx.client.event.CursorEvent;
+import cuboidx.util.AtomicDouble;
 import overrungl.glfw.GLFW;
 
 import java.lang.foreign.MemorySegment;

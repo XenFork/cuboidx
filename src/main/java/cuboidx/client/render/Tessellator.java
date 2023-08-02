@@ -39,7 +39,7 @@ import java.lang.invoke.VarHandle;
  * @since 0.1.0
  */
 public final class Tessellator implements VertexBuilder {
-    private static final int MAX_INDEX_COUNT = 30000;
+    private static final int MAX_INDEX_COUNT = 40000;
     private static final VertexLayout VERTEX_LAYOUT = VertexLayout.POSITION_COLOR_TEXTURE;
     private static final SequenceLayout LAYOUT = MemoryLayout.sequenceLayout(
         30000,

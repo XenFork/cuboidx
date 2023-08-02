@@ -59,11 +59,18 @@ public final class Entity implements Poolable {
     }
 
     public void moveRelative(double x, double y, double z, double speed) {
-        move(x * speed, y * speed, z * speed);
+        final double yaw = rotation().y();
+        final double sin = Math.sin(yaw);
+        final double cos = Math.cosFromSin(sin, yaw);
+        // FIXME: 2023/8/2 Move on X axis
+        move(z * sin * speed, y * speed, z * cos * speed);
     }
 
     public void rotate(double x, double y, double z) {
         rotation().add(x, y, z);
+        final double yaw = rotation().y();
+        if (yaw < 0) rotation().y = 2 * Math.PI + yaw;
+        if (yaw > 2 * Math.PI) rotation().y = 2 * Math.PI - yaw;
         if (type().limitedPitch()) {
             // TODO: 2023/8/1 Replace with PI_OVER_2
             rotation().x = Math.clamp(-Math.PI * 0.5, Math.PI * 0.5, rotation().x());

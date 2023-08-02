@@ -19,6 +19,7 @@
 package cuboidx.client.render;
 
 import cuboidx.world.entity.Entity;
+import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.overrun.timer.Timer;
 
@@ -41,7 +42,8 @@ public final class Camera {
     }
 
     public void moveToEntity(Entity entity) {
-        position.set(entity.position());
+        final Vector3d p = entity.position();
+        position.set(p.x(), p.y() + entity.type().eyeHeight(), p.z());
         rotation.set(entity.rotation());
     }
 
@@ -52,6 +54,17 @@ public final class Camera {
      */
     public void lerp(double partialTick) {
         prevPosition.lerp(position, partialTick, lerpPosition);
+    }
+
+    public Matrix4f viewMatrix(Matrix4f dest) {
+        return dest.rotationXYZ(
+                (float) -rotation().x(),
+                (float) -rotation().y(),
+                (float) -rotation().z())
+            .translate(
+                (float) -lerpPosition().x(),
+                (float) -lerpPosition().y(),
+                (float) -lerpPosition().z());
     }
 
     public Vector3d prevPosition() {

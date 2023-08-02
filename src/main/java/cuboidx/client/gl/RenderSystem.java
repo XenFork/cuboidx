@@ -37,6 +37,10 @@ public final class RenderSystem {
     private static final Matrix4f modelViewMatrix = new Matrix4f();
     private static final FrustumIntersection frustum = new FrustumIntersection();
 
+    ///////////////////////////////////////////////////////////////////////////
+    // OpenGL state manage
+    ///////////////////////////////////////////////////////////////////////////
+
     public static void useProgram(int program) {
         GLStateMgr.useProgram(program);
     }
@@ -99,6 +103,34 @@ public final class RenderSystem {
         GLStateMgr.cullFace(mode);
     }
 
+    public static void lineWidth(float width) {
+        GLStateMgr.lineWidth(width);
+    }
+
+    public static void enableLineSmooth() {
+        GLStateMgr.enableLineSmooth();
+    }
+
+    public static void disableLineSmooth() {
+        GLStateMgr.disableLineSmooth();
+    }
+
+    public static void polygonOffset(float factor, float units) {
+        GLStateMgr.polygonOffset(factor, units);
+    }
+
+    public static void enablePolygonOffsetLine() {
+        GLStateMgr.enablePolygonOffsetLine();
+    }
+
+    public static void disablePolygonOffsetLine() {
+        GLStateMgr.disablePolygonOffsetLine();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Render system
+    ///////////////////////////////////////////////////////////////////////////
+
     public static Matrix4fStack projectionMatrix() {
         return projectionMatrix;
     }
@@ -111,12 +143,16 @@ public final class RenderSystem {
         return modelMatrix;
     }
 
+    public static Matrix4f projectionViewMatrix() {
+        return projectionMatrix.mul(viewMatrix, projectionViewMatrix);
+    }
+
     public static Matrix4f modelViewMatrix() {
         return viewMatrix.mul(modelMatrix, modelViewMatrix);
     }
 
     public static void updateFrustum() {
-        frustum.set(projectionMatrix.mul(viewMatrix, projectionViewMatrix));
+        frustum.set(projectionViewMatrix());
     }
 
     public static FrustumIntersection frustum() {

@@ -18,6 +18,7 @@
 
 package cuboidx.client.event;
 
+import cuboidx.event.Event;
 import cuboidx.registry.RegistryKey;
 import cuboidx.registry.RegistryKeys;
 import cuboidx.util.ResourceLocation;

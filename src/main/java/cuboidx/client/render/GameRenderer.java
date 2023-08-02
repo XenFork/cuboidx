@@ -70,6 +70,7 @@ public final class GameRenderer implements AutoCloseable {
 
     public void render(double partialTick) {
         client.worldRenderer().renderChunks(partialTick);
+        client.worldRenderer().renderHitResult();
         renderGui(partialTick);
     }
 
