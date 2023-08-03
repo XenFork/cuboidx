@@ -62,8 +62,7 @@ public final class Entity implements Poolable {
         final double yaw = rotation().y();
         final double sin = Math.sin(yaw);
         final double cos = Math.cosFromSin(sin, yaw);
-        // FIXME: 2023/8/2 Move on X axis
-        move(z * sin * speed, y * speed, z * cos * speed);
+        move((z * sin + x * cos) * speed, y * speed, (z * cos - x * sin) * speed);
     }
 
     public void rotate(double x, double y, double z) {
