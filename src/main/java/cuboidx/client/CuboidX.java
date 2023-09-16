@@ -29,6 +29,7 @@ import cuboidx.event.RegistryEvent;
 import cuboidx.registry.Registries;
 import cuboidx.util.AtomicDouble;
 import cuboidx.util.ResourceLocation;
+import cuboidx.world.HitResult;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockTypes;
 import cuboidx.world.entity.Entity;
@@ -213,6 +214,10 @@ public final class CuboidX implements Runnable {
         if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
         final boolean sprint = GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS;
         player.moveRelative(xo, yo, zo, sprint ? 0.3 : 0.1);
+        if (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_LEFT) == GLFW.PRESS) {
+            final HitResult result = worldRenderer.hitResult();
+            world.setBlock(result.x(), result.y(), result.z(), BlockTypes.AIR);
+        }
     }
 
     public void lateUpdate() {

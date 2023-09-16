@@ -18,6 +18,8 @@
 
 package cuboidx.util.math;
 
+import org.jetbrains.annotations.UnmodifiableView;
+
 import java.util.List;
 
 /**
@@ -54,7 +56,10 @@ public enum Direction {
         return VALUES[id];
     }
 
-    public static List<Direction> list() {
+    /**
+     * {@return an unmodifiable and cached view of the values}
+     */
+    public static @UnmodifiableView List<Direction> list() {
         return LIST;
     }
 

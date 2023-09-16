@@ -43,6 +43,7 @@ public final class World {
     private final BlockType[] blocks;
     private final KeyedPool<EntityType, Entity> entityPool = new KeyedObjectPool<>(Entity::new);
     private final List<Entity> entities = new ArrayList<>();
+    private final List<WorldListener> listeners = new ArrayList<>();
 
     public World(int width, int height, int depth) {
         this.width = width;
@@ -58,6 +59,10 @@ public final class World {
                 setBlock(x, 16, z, BlockTypes.GRASS_BLOCK);
             }
         }
+    }
+
+    public void addListener(WorldListener listener) {
+        listeners.add(listener);
     }
 
     public KeyedPoolObjectState<EntityType, Entity> spawn(EntityType entityType, double x, double y, double z) {
@@ -92,9 +97,19 @@ public final class World {
         return BlockTypes.AIR;
     }
 
-    public void setBlock(int x, int y, int z, BlockType block) {
+    private boolean initBlock(int x, int y, int z, BlockType block) {
         if (isInBound(x, y, z)) {
             blocks[width * (y * depth + z) + x] = block;
+            return true;
+        }
+        return false;
+    }
+
+    public void setBlock(int x, int y, int z, BlockType block) {
+        if (initBlock(x, y, z, block)) {
+            for (WorldListener listener : listeners) {
+                listener.onBlockChanged(x, y, z, block);
+            }
         }
     }
 

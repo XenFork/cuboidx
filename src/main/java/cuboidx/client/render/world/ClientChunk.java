@@ -38,6 +38,7 @@ import java.lang.foreign.ValueLayout;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A client chunk that stored the vertices and indices data.
@@ -57,8 +58,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link CompileStates#uploaded() uploaded}, {@link #dirty() dirty} and {@link #submitted() submitted} will be set to false.
  * <h2>Uploading</h2>
  * If the chunk have had compiled, then the render thread will upload the mesh data to OpenGL.
- * Once the chunk is uploaded {@link CompileStates#hadUploaded() hadUploaded}
- * and {@link CompileStates#uploaded() uploaded} will be set to {@code true}.
+ * Once the chunk is uploaded, {@link CompileStates#uploaded() uploaded} will be set to {@code true}.
  *
  * @author squid233
  * @since 0.1.0
@@ -91,9 +91,9 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
         private final AtomicInteger indexCount = new AtomicInteger();
         private final AtomicBoolean hadCompiled = new AtomicBoolean();
         private final AtomicBoolean uploaded = new AtomicBoolean();
-        private boolean hadUploaded = false;
-        private MemorySegment data;
-        private MemorySegment indexData;
+        private final AtomicBoolean expanded = new AtomicBoolean(true);
+        private final AtomicReference<MemorySegment> data = new AtomicReference<>();
+        private final AtomicReference<MemorySegment> indexData = new AtomicReference<>();
 
         private CompileStates() {
             vao = GL.genVertexArray();
@@ -147,31 +147,31 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
             return uploaded.get();
         }
 
-        public void markUploaded() {
-            this.hadUploaded = true;
+        public void setExpanded(boolean expanded) {
+            this.expanded.set(expanded);
         }
 
         /**
-         * Had this chunk uploaded?
+         * Is the buffer of this chunk expanded?
          */
-        public boolean hadUploaded() {
-            return hadUploaded;
+        public boolean expanded() {
+            return expanded.get();
         }
 
         public void setData(MemorySegment data) {
-            this.data = data;
+            this.data.set(data);
         }
 
         public MemorySegment data() {
-            return data;
+            return data.get();
         }
 
         public void setIndexData(MemorySegment indexData) {
-            this.indexData = indexData;
+            this.indexData.set(indexData);
         }
 
         public MemorySegment indexData() {
-            return indexData;
+            return indexData.get();
         }
 
         @Override
@@ -179,8 +179,8 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
             RenderSystem.deleteVertexArray(vao);
             RenderSystem.deleteArrayBuffer(vbo);
             GL.deleteBuffer(ebo);
-            MemoryUtil.free(data);
-            MemoryUtil.free(indexData);
+            MemoryUtil.free(data());
+            MemoryUtil.free(indexData());
         }
     }
 
@@ -208,21 +208,21 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
             if (!states.hadCompiled()) {
                 states.setData(MemoryUtil.calloc(1, dataSize));
                 states.setIndexData(MemoryUtil.calloc(states.indexCount(), ValueLayout.JAVA_INT));
+                states.setExpanded(true);
             } else {
                 // if expanded
                 if (dataSize > states.data().byteSize()) {
                     states.setData(MemoryUtil.realloc(states.data(), dataSize));
+                    states.setExpanded(true);
                 }
                 final long indexDataSize = (long) states.indexCount() << 2;
                 if (indexDataSize > states.indexData().byteSize()) {
                     states.setIndexData(MemoryUtil.realloc(states.indexData(), indexDataSize));
+                    states.setExpanded(true);
                 }
             }
             builder.end(null, states.data(), states.indexData());
-            states.markCompiled();
-            states.setUploaded(false);
         }
-        dirty.set(false);
     }
 
     public void render() {
@@ -232,21 +232,21 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
                 final int arrayBufferBinding = GLStateMgr.arrayBufferBinding();
                 RenderSystem.bindVertexArray(states.vao());
                 RenderSystem.bindArrayBuffer(states.vbo());
-                if (!states.hadUploaded()) {
+                if (states.expanded()) {
                     GL.bufferData(GL.ARRAY_BUFFER, states.data(), GL.DYNAMIC_DRAW);
                     states.layer().layout().specifyAttributes();
                 } else {
                     GL.bufferSubData(GL.ARRAY_BUFFER, 0, states.data());
                 }
                 RenderSystem.bindArrayBuffer(arrayBufferBinding);
-                if (!states.hadUploaded()) {
+                if (states.expanded()) {
                     GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, states.ebo());
                     GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, states.indexData(), GL.DYNAMIC_DRAW);
                 } else {
                     GL.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, 0, states.indexData());
                 }
                 RenderSystem.bindVertexArray(vertexArrayBinding);
-                states.markUploaded();
+                states.setExpanded(false);
                 states.setUploaded(true);
             }
             final int vertexArrayBinding = GLStateMgr.vertexArrayBinding();
@@ -259,6 +259,10 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
     public void markDirty() {
         dirty.set(true);
         dirtyTime.set(System.currentTimeMillis());
+    }
+
+    public void markNotDirty() {
+        dirty.set(false);
     }
 
     public boolean dirty() {

@@ -25,8 +25,10 @@ import cuboidx.client.gl.RenderSystem;
 import cuboidx.client.render.Tessellator;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.util.math.AABBox;
+import cuboidx.util.math.Direction;
 import cuboidx.world.HitResult;
 import cuboidx.world.World;
+import cuboidx.world.WorldListener;
 import cuboidx.world.block.BlockType;
 import cuboidx.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
@@ -42,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The world renderer renders the world in {@link cuboidx.world.chunk.Chunk chunks}.
@@ -58,7 +61,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author squid233
  * @since 0.1.0
  */
-public final class WorldRenderer implements AutoCloseable {
+public final class WorldRenderer implements WorldListener, AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
     private static final int MAX_COMPILE_COUNT = Runtime.getRuntime().availableProcessors() + 1;
     private final CuboidX client;
@@ -68,7 +71,7 @@ public final class WorldRenderer implements AutoCloseable {
     private final List<ClientChunk> dirtyChunks;
     private final ChunkCompiler compiler = new ChunkCompiler();
     private final ExecutorService threadPool;
-    private final HitResult hitResult = new HitResult();
+    private final AtomicReference<HitResult> hitResult = new AtomicReference<>();
     private final Vector3f hitOrientation = new Vector3f();
     private final Vector2d hitNearFar = new Vector2d();
 
@@ -99,7 +102,7 @@ public final class WorldRenderer implements AutoCloseable {
 
         threadPool = new ThreadPoolExecutor(MAX_COMPILE_COUNT - 1,
             MAX_COMPILE_COUNT,
-            30L,
+            20L,
             TimeUnit.SECONDS,
             new SynchronousQueue<>(),
             new ThreadFactory() {
@@ -115,6 +118,8 @@ public final class WorldRenderer implements AutoCloseable {
                     future.cancel(true);
                 }
             });
+
+        world.addListener(this);
     }
 
     public void compileChunks() {
@@ -136,7 +141,13 @@ public final class WorldRenderer implements AutoCloseable {
                 chunk.compile(builder.get());
                 compiler.returning(builder);
                 return chunk;
-            }, threadPool).thenAccept(clientChunk -> clientChunk.setSubmitted(false));
+            }, threadPool).thenAccept(clientChunk -> {
+                final ClientChunk.CompileStates states = clientChunk.states();
+                states.setUploaded(false);
+                clientChunk.setSubmitted(false);
+                clientChunk.markNotDirty();
+                states.markCompiled();
+            });
         }
     }
 
@@ -183,11 +194,12 @@ public final class WorldRenderer implements AutoCloseable {
     }
 
     public void renderHitResult() {
-        if (!hitResult.missed()) {
-            final AABBox box = hitResult.block().outlineShape().move(
-                hitResult.x(),
-                hitResult.y(),
-                hitResult.z());
+        final HitResult result = hitResult.get();
+        if (!result.missed()) {
+            final AABBox box = result.block().outlineShape().move(
+                result.x(),
+                result.y(),
+                result.z());
             final float x0 = (float) box.minX();
             final float y0 = (float) box.minY();
             final float z0 = (float) box.minZ();
@@ -283,7 +295,38 @@ public final class WorldRenderer implements AutoCloseable {
             }
         }
 
-        hitResult.update(target == null, targetX, targetY, targetZ, target);
+        hitResult.set(new HitResult(target == null, targetX, targetY, targetZ, target));
+    }
+
+    public HitResult hitResult() {
+        return hitResult.get();
+    }
+
+    private ClientChunk getChunk(int x, int y, int z) {
+        if (x < 0 || y < 0 || z < 0 || x >= xChunks || y >= yChunks || z >= zChunks) return null;
+        return chunks[xChunks * (y * zChunks + z) + x];
+    }
+
+    private ClientChunk getChunkByBlockPos(int x, int y, int z) {
+        return getChunk(
+            Math.floorDiv(x, Chunk.SIZE),
+            Math.floorDiv(y, Chunk.SIZE),
+            Math.floorDiv(z, Chunk.SIZE)
+        );
+    }
+
+    @Override
+    public void onBlockChanged(int x, int y, int z, BlockType newBlock) {
+        for (Direction direction : Direction.list()) {
+            final ClientChunk chunk = getChunkByBlockPos(
+                x + direction.axisX(),
+                y + direction.axisY(),
+                z + direction.axisZ()
+            );
+            if (chunk != null) chunk.markDirty();
+        }
+        final ClientChunk chunk = getChunkByBlockPos(x, y, z);
+        if (chunk != null) chunk.markDirty();
     }
 
     @Override

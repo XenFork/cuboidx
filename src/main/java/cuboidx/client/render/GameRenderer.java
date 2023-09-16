@@ -42,7 +42,7 @@ import java.util.Set;
 public final class GameRenderer implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
     private final CuboidX client;
-    private GLProgram positionColorProgram,
+    private final GLProgram positionColorProgram,
         positionColorTextureProgram;
 
     public GameRenderer(CuboidX client) {

@@ -125,7 +125,7 @@ public final class BufferedVertexBuilder implements Poolable, VertexBuilder, Aut
 
         MemorySegment.copy(this.data, 0, data, 0, dataSize);
         if (!MemoryUtil.isNullptr(indexData))
-            MemorySegment.copy(this.indexData, 0, indexData, 0, (long) indexCount << 2);
+            MemorySegment.copy(this.indexData, ValueLayout.JAVA_INT, 0, indexData, ValueLayout.JAVA_INT, 0, indexCount);
 
         drawing = false;
         final int count = indexCount;

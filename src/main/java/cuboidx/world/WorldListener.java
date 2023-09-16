@@ -24,5 +24,6 @@ import cuboidx.world.block.BlockType;
  * @author squid233
  * @since 0.1.0
  */
-public /* value */ record HitResult(boolean missed, int x, int y, int z, BlockType block) {
+public interface WorldListener {
+    void onBlockChanged(int x, int y, int z, BlockType newBlock);
 }
