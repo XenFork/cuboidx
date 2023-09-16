@@ -43,6 +43,7 @@ dependencies {
     implementation(platform("io.github.over-run:utilities:0.+"))
     implementation "io.github.over-run:bin-packing"
     implementation "io.github.over-run:bin-tag"
+    implementation "io.github.over-run:pooling"
     implementation "io.github.over-run:timer"
     implementation "io.github.over-run:unifont"
     implementation "com.google.code.gson:gson:2.10.1"
@@ -110,13 +111,13 @@ jar {
 sourcesJar {
     dependsOn classes
     archiveClassifier.set 'sources'
-    from sourceSets.main.allSource, 'COPYING.LESSER'
+    from sourceSets.main.allSource, 'COPYING'
 }
 
 javadocJar {
     dependsOn javadoc
     archiveClassifier.set 'javadoc'
-    from javadoc, 'COPYING.LESSER'
+    from javadoc, 'COPYING'
 }
 
 artifacts {
@@ -136,8 +137,8 @@ publishing.publications {
             url.set "https://github.com/$projVcs"
             licenses {
                 license {
-                    name.set 'LGPL-3.0-only'
-                    url.set "https://raw.githubusercontent.com/$projVcs/$projBranch/COPYING.LESSER"
+                    name.set 'GPL-3.0-only'
+                    url.set "https://raw.githubusercontent.com/$projVcs/$projBranch/COPYING"
                 }
             }
             organization {

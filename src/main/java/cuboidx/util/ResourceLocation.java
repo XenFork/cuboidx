@@ -3,16 +3,16 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -60,14 +60,14 @@ public /* value */ record ResourceLocation(String namespace, String path) {
         if (NAMESPACE_RULE.matcher(s).matches()) {
             return s;
         }
-        throw new IllegalArgumentException("Invalid namespace: " + s);
+        throw new IllegalArgumentException(STR. "Invalid namespace: \{ s }" );
     }
 
     private static String checkPath(String s) {
         if (PATH_RULE.matcher(s).matches()) {
             return s;
         }
-        throw new IllegalArgumentException("Invalid path: " + s);
+        throw new IllegalArgumentException(STR. "Invalid path: \{ s }" );
     }
 
     public String toPath(@Nullable String prefix, @Nullable String type) {

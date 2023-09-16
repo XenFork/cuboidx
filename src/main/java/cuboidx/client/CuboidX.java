@@ -3,22 +3,22 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package cuboidx.client;
 
-import cuboidx.client.event.CursorEvent;
+import cuboidx.client.event.MouseEvent;
 import cuboidx.client.render.Camera;
 import cuboidx.client.render.GameRenderer;
 import cuboidx.client.render.world.BlockRenderer;
@@ -92,13 +92,14 @@ public final class CuboidX implements Runnable {
         GLFW.windowHint(GLFW.CONTEXT_VERSION_MINOR, 3);
         GLFW.windowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_COMPAT_PROFILE);
         GLFW.windowHint(GLFW.OPENGL_FORWARD_COMPAT, true);
-        window = GLFW.createWindow(854, 480, "CuboidX " + VERSION, MemorySegment.NULL, MemorySegment.NULL);
+        window = GLFW.createWindow(854, 480, STR. "CuboidX \{ VERSION }" , MemorySegment.NULL, MemorySegment.NULL);
         CheckUtil.checkNotNullptr(window, "Failed to create the GLFW window");
         mouse = new Mouse(window);
-        EVENT_BUS.addListener(CursorEvent.Pos.ID, this::onCursorPos);
+        EVENT_BUS.addListener(MouseEvent.CursorPos.ID, this::onCursorPos);
+        EVENT_BUS.addListener(MouseEvent.Button.ID, this::onMouseButton);
         GLFW.setKeyCallback(window, this::onKey);
         GLFW.setFramebufferSizeCallback(window, this::onResize);
-        GLFW.setWindowIconifyCallback(window, (h, iconified) -> this.shouldRender.set(!iconified));
+        GLFW.setWindowIconifyCallback(window, (/* TODO: unnamed parameter is NOT supported */ h, iconified) -> this.shouldRender.set(!iconified));
 
         final GLFWVidMode.Value videoMode = GLFW.getVideoMode(GLFW.getPrimaryMonitor());
         if (videoMode != null) {
@@ -127,7 +128,7 @@ public final class CuboidX implements Runnable {
             logger.info("Registered {} entities", Registries.ENTITY_TYPE.size());
 
             world = new World(256, 64, 256);
-            player = world.spawn(EntityTypes.PLAYER, 128, 20, 128);
+            player = world.spawn(EntityTypes.PLAYER, 128, 20, 128).get();
 
             timer = Timer.ofGetter(TPS, currentTimeGetter);
 
@@ -166,12 +167,23 @@ public final class CuboidX implements Runnable {
         }
     }
 
-    private void onCursorPos(CursorEvent.Pos event) {
+    private void onCursorPos(MouseEvent.CursorPos event) {
         if (mouse.mouseGrabbed()) {
             player.rotate(
                 -Math.toRadians(event.deltaY() * MOUSE_SENSITIVITY),
                 -Math.toRadians(event.deltaX() * MOUSE_SENSITIVITY),
                 0);
+        }
+    }
+
+    private void onMouseButton(MouseEvent.Button event) {
+        if (event.action() == GLFW.PRESS) {
+            switch (event.button()) {
+                case GLFW.MOUSE_BUTTON_LEFT -> {
+                }
+                case GLFW.MOUSE_BUTTON_RIGHT -> {
+                }
+            }
         }
     }
 

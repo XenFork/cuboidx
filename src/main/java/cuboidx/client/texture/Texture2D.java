@@ -3,16 +3,16 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -63,13 +63,13 @@ public class Texture2D implements AutoCloseable {
     }
 
     public static Texture2D load(ResourceLocation location, int channels) {
-        try (NativeImage image = NativeImage.load(location.toPath(ResourceLocation.ASSETS, ResourceLocation.TEXTURE) + ".png", channels)) {
+        try (NativeImage image = NativeImage.load(STR."\{location.toPath(ResourceLocation.ASSETS, ResourceLocation.TEXTURE)}.png", channels)) {
             final int format = switch (image.format()) {
                 case STBImage.GREY -> GL.RED;
                 case STBImage.GREY_ALPHA -> GL.RG;
                 case STBImage.RGB -> GL.RGB;
                 case STBImage.RGB_ALPHA -> GL.RGBA;
-                default -> throw new IllegalStateException("Unexpected value: " + image.format());
+                default -> throw new IllegalStateException(STR."Unexpected value: \{image.format()}");
             };
             final int width = image.width();
             final int height = image.height();

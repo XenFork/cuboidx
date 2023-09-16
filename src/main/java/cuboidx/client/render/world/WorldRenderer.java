@@ -3,16 +3,16 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -22,7 +22,6 @@ import cuboidx.client.CuboidX;
 import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
-import cuboidx.client.render.BufferedVertexBuilder;
 import cuboidx.client.render.Tessellator;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.util.math.AABBox;
@@ -108,30 +107,36 @@ public final class WorldRenderer implements AutoCloseable {
 
                 @Override
                 public Thread newThread(@NotNull Runnable r) {
-                    return new Thread(r, "Chunk-worker-thread-" + threadNumber.getAndIncrement());
+                    return new Thread(r, STR. "Chunk-worker-thread-\{ threadNumber.getAndIncrement() }" );
                 }
             },
-            new ThreadPoolExecutor.DiscardPolicy());
+            (r, executor) -> {
+                if (!executor.isShutdown() && r instanceof Future<?> future) {
+                    future.cancel(true);
+                }
+            });
     }
 
     public void compileChunks() {
         dirtyChunks.clear();
-        for (ClientChunk chunk : chunks) {
+        for (int i = 0, j = 0; i < chunks.length && j < MAX_COMPILE_COUNT; i++) {
+            ClientChunk chunk = chunks[i];
             // TODO: 2023/7/8 Receiving changes
             if (chunk.dirty() && !chunk.submitted()) {
                 dirtyChunks.add(chunk);
+                j++;
             }
         }
         dirtyChunks.sort(new DirtyChunkSorter(client.player(), RenderSystem.frustum()));
         for (int i = 0; i < dirtyChunks.size() && i < MAX_COMPILE_COUNT; i++) {
             final ClientChunk chunk = dirtyChunks.get(i);
-            threadPool.submit(() -> {
+            CompletableFuture.supplyAsync(() -> {
                 chunk.setSubmitted(true);
-                final BufferedVertexBuilder builder = compiler.poll(BlockRenderLayer.OPAQUE);
-                chunk.compile(builder);
-                compiler.free(BlockRenderLayer.OPAQUE, builder);
-                chunk.setSubmitted(false);
-            });
+                final var builder = compiler.borrow(BlockRenderLayer.OPAQUE);
+                chunk.compile(builder.get());
+                compiler.returning(builder);
+                return chunk;
+            }, threadPool).thenAccept(clientChunk -> clientChunk.setSubmitted(false));
         }
     }
 

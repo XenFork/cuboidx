@@ -3,16 +3,16 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -53,16 +53,16 @@ public final class GLProgram implements AutoCloseable {
             final GLProgram program = new GLProgram();
 
             final JsonObject json = JsonParser.parseString(Objects.requireNonNull(FileUtil.readString(
-                location.toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".json"))
+                STR. "\{ location.toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) }.json" ))
             ).getAsJsonObject();
 
             final int vsh = compileShader(GL.VERTEX_SHADER, "vertex",
-                FileUtil.readString(ResourceLocation.of(json.get("vertex").getAsString())
-                    .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".vert"));
+                FileUtil.readString(STR. "\{ ResourceLocation.of(json.get("vertex").getAsString())
+                    .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) }.vert" ));
             if (vsh < 0) return null;
             final int fsh = compileShader(GL.FRAGMENT_SHADER, "fragment",
-                FileUtil.readString(ResourceLocation.of(json.get("fragment").getAsString())
-                    .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) + ".frag"));
+                FileUtil.readString(STR. "\{ ResourceLocation.of(json.get("fragment").getAsString())
+                    .toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) }.frag" ));
             if (fsh < 0) return null;
 
             GL.attachShader(program.id(), vsh);
@@ -109,7 +109,7 @@ public final class GLProgram implements AutoCloseable {
     private void initUniform(JsonObject json, String name) {
         final GLUniform.Type type = GLUniform.Type.byName(json.get("type").getAsString());
         final JsonArray values = json.getAsJsonArray("values");
-        final GLUniform uniform = Objects.requireNonNull(createUniform(name, type), "No given uniform '" + name + "' found");
+        final GLUniform uniform = Objects.requireNonNull(createUniform(name, type), STR. "No given uniform '\{ name }' found" );
         switch (type) {
             case INT -> uniform.set(values.get(0).getAsInt());
             case VEC4 -> uniform.set(

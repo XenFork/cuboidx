@@ -21,6 +21,7 @@
  * @since 0.1.0
  */
 module cuboidx.core {
+    exports cuboidx.client.event;
     exports cuboidx.client.gl;
     exports cuboidx.client.main;
     exports cuboidx.client.render.world;
@@ -30,7 +31,6 @@ module cuboidx.core {
     exports cuboidx.event;
     exports cuboidx.registry;
     exports cuboidx.util.math;
-    exports cuboidx.util.pool;
     exports cuboidx.util;
     exports cuboidx.world.block;
     exports cuboidx.world.chunk;
@@ -44,6 +44,7 @@ module cuboidx.core {
     requires overrungl.stb;
     requires org.overrun.binpacking;
     requires org.overrun.bintag;
+    requires org.overrun.pooling;
     requires org.overrun.timer;
     requires org.overrun.unifont;
 
@@ -52,5 +53,4 @@ module cuboidx.core {
     requires org.apache.logging.log4j.core;
     requires org.joml;
     requires static org.jetbrains.annotations;
-    requires java.desktop;
 }

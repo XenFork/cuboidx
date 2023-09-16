@@ -3,16 +3,16 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
@@ -43,22 +43,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * A client chunk that stored the vertices and indices data.
  * <p>
  * There are 4 phases of compilation: dirtying, submitting, compiling and uploading.
- *
  * <h2>Dirtying</h2>
  * If the content of this chunk has been changed, this chunk will {@link #markDirty()}.
  * {@link WorldRenderer} will collect dirty chunks and submit then to the compiling task queue.
- *
  * <h2>Submitting</h2>
  * Dirty chunks are submitted.
  * If the chunk submitted successfully, {@link #submitted() submitted} will be set to {@code true} and it will compile;
  * otherwise it is discarded and deferred to next submitting.
- *
  * <h2>Compiling</h2>
  * Compiling chunk means building mesh data of the chunk.
  * This is done from another thread.
  * Once the chunk is compiled, {@link CompileStates#hadCompiled() hadCompiled} will be set to {@code true},
  * {@link CompileStates#uploaded() uploaded}, {@link #dirty() dirty} and {@link #submitted() submitted} will be set to false.
- *
  * <h2>Uploading</h2>
  * If the chunk have had compiled, then the render thread will upload the mesh data to OpenGL.
  * Once the chunk is uploaded {@link CompileStates#hadUploaded() hadUploaded}

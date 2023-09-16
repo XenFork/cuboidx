@@ -3,23 +3,24 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package cuboidx.client;
 
-import cuboidx.client.event.CursorEvent;
+import cuboidx.client.event.MouseEvent;
 import cuboidx.util.AtomicDouble;
+import org.overrun.pooling.PoolObjectState;
 import overrungl.glfw.GLFW;
 
 import java.lang.foreign.MemorySegment;
@@ -44,9 +45,14 @@ public final class Mouse {
             AtomicDouble.set(cursorDeltaY, y - cursorY());
             AtomicDouble.set(cursorX, x);
             AtomicDouble.set(cursorY, y);
-            final CursorEvent.Pos event = CursorEvent.Pos.of(x, y, cursorDeltaX(), cursorDeltaY());
-            CuboidX.EVENT_BUS.post(event);
-            event.free();
+            final PoolObjectState<MouseEvent.CursorPos> event = MouseEvent.CursorPos.of(x, y, cursorDeltaX(), cursorDeltaY());
+            CuboidX.EVENT_BUS.post(event.get());
+            MouseEvent.CursorPos.free(event);
+        });
+        GLFW.setMouseButtonCallback(window, (h, button, action, mods) -> {
+            final PoolObjectState<MouseEvent.Button> event = MouseEvent.Button.of(button, action, mods);
+            CuboidX.EVENT_BUS.post(event.get());
+            MouseEvent.Button.free(event);
         });
     }
 

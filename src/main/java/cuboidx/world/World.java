@@ -3,27 +3,29 @@
  * Copyright (C) 2023  XenFork Union
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package cuboidx.world;
 
-import cuboidx.util.pool.KeyedPool;
 import cuboidx.world.block.BlockType;
 import cuboidx.world.block.BlockTypes;
 import cuboidx.world.entity.Entity;
 import cuboidx.world.entity.EntityType;
 import org.jetbrains.annotations.Nullable;
+import org.overrun.pooling.KeyedObjectPool;
+import org.overrun.pooling.KeyedPool;
+import org.overrun.pooling.KeyedPoolObjectState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,7 +41,7 @@ public final class World {
     private final int height;
     private final int depth;
     private final BlockType[] blocks;
-    private final KeyedPool<EntityType, Entity> entityPool = new KeyedPool<>(Entity::new);
+    private final KeyedPool<EntityType, Entity> entityPool = new KeyedObjectPool<>(Entity::new);
     private final List<Entity> entities = new ArrayList<>();
 
     public World(int width, int height, int depth) {
@@ -58,13 +60,14 @@ public final class World {
         }
     }
 
-    public Entity spawn(EntityType entityType, double x, double y, double z) {
-        final Entity entity = entityPool.poll(entityType);
+    public KeyedPoolObjectState<EntityType, Entity> spawn(EntityType entityType, double x, double y, double z) {
+        final var state = entityPool.borrow(entityType).state();
+        final Entity entity = state.get();
         entity.setWorld(this);
         entity.setUuid(UUID.randomUUID());
         entity.spawn(x, y, z);
         entities.add(entity);
-        return entity;
+        return state;
     }
 
     public @Nullable Entity findEntity(UUID uuid) {
@@ -74,9 +77,9 @@ public final class World {
         return null;
     }
 
-    public void removeEntity(Entity entity) {
-        entities.remove(entity);
-        entityPool.free(entity.type(), entity);
+    public void removeEntity(KeyedPoolObjectState<EntityType, Entity> entity) {
+        entities.remove(entity.get());
+        entityPool.returning(entity);
     }
 
     public boolean isInBound(int x, int y, int z) {
