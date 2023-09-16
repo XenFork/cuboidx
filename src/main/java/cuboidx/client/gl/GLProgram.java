@@ -40,17 +40,19 @@ import java.util.Objects;
  */
 public final class GLProgram implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
+    private final ResourceLocation location;
     private final int id;
     private final Arena uniformArena = Arena.ofConfined();
     private final Map<String, GLUniform> uniformMap = new HashMap<>();
 
-    private GLProgram() {
+    private GLProgram(ResourceLocation location) {
+        this.location = location;
         this.id = GL.createProgram();
     }
 
     public static GLProgram load(ResourceLocation location, VertexLayout layout) {
         try {
-            final GLProgram program = new GLProgram();
+            final GLProgram program = new GLProgram(location);
 
             final JsonObject json = JsonParser.parseString(Objects.requireNonNull(FileUtil.readString(
                 STR. "\{ location.toPath(ResourceLocation.ASSETS, ResourceLocation.SHADER) }.json" ))
@@ -172,6 +174,10 @@ public final class GLProgram implements AutoCloseable {
         uniformMap.values().forEach(GLUniform::specify);
     }
 
+    public ResourceLocation location() {
+        return location;
+    }
+
     public int id() {
         return id;
     }
@@ -184,5 +190,6 @@ public final class GLProgram implements AutoCloseable {
     public void close() {
         GL.deleteProgram(id);
         uniformArena.close();
+        logger.info("Cleaned up GLProgram {}", location);
     }
 }

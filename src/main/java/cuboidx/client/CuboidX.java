@@ -29,6 +29,7 @@ import cuboidx.event.RegistryEvent;
 import cuboidx.registry.Registries;
 import cuboidx.util.AtomicDouble;
 import cuboidx.util.ResourceLocation;
+import cuboidx.util.math.Direction;
 import cuboidx.world.HitResult;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockTypes;
@@ -71,6 +72,7 @@ public final class CuboidX implements Runnable {
     private final AtomicInteger height = new AtomicInteger();
     private final AtomicBoolean resized = new AtomicBoolean();
     private final AtomicBoolean shouldRender = new AtomicBoolean(true);
+    private final AtomicBoolean interrupted = new AtomicBoolean();
     private final AtomicLong partialTick = new AtomicLong();
     private final AtomicLong currentTime = new AtomicLong();
     private final DoubleSupplier currentTimeGetter = () -> AtomicDouble.get(currentTime);
@@ -159,6 +161,7 @@ public final class CuboidX implements Runnable {
                 close();
             }
         } catch (Exception e) {
+            interrupted.set(true);
             logger.error(e);
             renderThread.interrupt();
         } finally {
@@ -181,8 +184,17 @@ public final class CuboidX implements Runnable {
         if (event.action() == GLFW.PRESS) {
             switch (event.button()) {
                 case GLFW.MOUSE_BUTTON_LEFT -> {
+                    final HitResult result = worldRenderer.hitResult();
+                    if (result != null && !result.missed()) {
+                        world.setBlock(result.x(), result.y(), result.z(), BlockTypes.AIR);
+                    }
                 }
                 case GLFW.MOUSE_BUTTON_RIGHT -> {
+                    final HitResult result = worldRenderer.hitResult();
+                    if (result != null && !result.missed()) {
+                        final Direction side = result.side();
+                        world.setBlock(result.x() + side.axisX(), result.y() + side.axisY(), result.z() + side.axisZ(), BlockTypes.DIRT);
+                    }
                 }
             }
         }
@@ -214,10 +226,6 @@ public final class CuboidX implements Runnable {
         if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
         final boolean sprint = GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS;
         player.moveRelative(xo, yo, zo, sprint ? 0.3 : 0.1);
-        if (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_LEFT) == GLFW.PRESS) {
-            final HitResult result = worldRenderer.hitResult();
-            world.setBlock(result.x(), result.y(), result.z(), BlockTypes.AIR);
-        }
     }
 
     public void lateUpdate() {
@@ -243,15 +251,18 @@ public final class CuboidX implements Runnable {
         worldRenderer = new WorldRenderer(this, world);
 
         clientTimer = Timer.ofGetter(TPS, currentTimeGetter);
-        while (!GLFW.windowShouldClose(window)) {
-            clientTimer.advanceTime();
-            if (shouldRender.get()) {
-                clientRender(partialTick());
-                GLFW.swapBuffers(window);
+        try {
+            while (!GLFW.windowShouldClose(window)) {
+                clientTimer.advanceTime();
+                if (shouldRender.get() && !interrupted.get()) {
+                    clientRender(partialTick());
+                    GLFW.swapBuffers(window);
+                }
+                clientTimer.calcFPS();
             }
-            clientTimer.calcFPS();
+        } finally {
+            clientClose();
         }
-        clientClose();
     }
 
     private void clientClose() {

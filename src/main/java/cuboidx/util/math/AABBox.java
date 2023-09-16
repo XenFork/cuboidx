@@ -19,6 +19,7 @@
 package cuboidx.util.math;
 
 import org.joml.FrustumIntersection;
+import org.joml.Intersectiond;
 
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -67,6 +68,138 @@ public final /* value */ class AABBox {
 
     public boolean test(FrustumIntersection frustum) {
         return frustum.testAab((float) minX(), (float) minY(), (float) minZ(), (float) maxX(), (float) maxY(), (float) maxZ());
+    }
+
+    public Direction testSide(double originX, double originY, double originZ,
+                              double dirX, double dirY, double dirZ) {
+        for (Direction direction : Direction.list()) {
+            final double t = intersectSide(originX, originY, originZ, dirX, dirY, dirZ, direction);
+            if (t != -1) return direction;
+        }
+        return Direction.SOUTH;
+    }
+
+    public double intersectSide(
+        double originX, double originY, double originZ,
+        double dirX, double dirY, double dirZ,
+        Direction side) {
+        final double epsilon = 0.001;
+        return switch (side) {
+            case WEST -> {
+                final double t1 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    minX(), maxY(), minZ(),
+                    minX(), minY(), minZ(),
+                    minX(), minY(), maxZ(),
+                    epsilon
+                );
+                final double t2 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    minX(), minY(), maxZ(),
+                    minX(), maxY(), maxZ(),
+                    minX(), maxY(), minZ(),
+                    epsilon
+                );
+                yield t1 == -1 ? t2 : t1;
+            }
+            case EAST -> {
+                final double t1 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    maxX(), maxY(), maxZ(),
+                    maxX(), minY(), maxZ(),
+                    maxX(), minY(), minZ(),
+                    epsilon
+                );
+                final double t2 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    maxX(), minY(), minZ(),
+                    maxX(), maxY(), minZ(),
+                    maxX(), maxY(), maxZ(),
+                    epsilon
+                );
+                yield t1 == -1 ? t2 : t1;
+            }
+            case DOWN -> {
+                final double t1 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    minX(), minY(), maxZ(),
+                    minX(), minY(), minZ(),
+                    maxX(), minY(), minZ(),
+                    epsilon
+                );
+                final double t2 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    maxX(), minY(), minZ(),
+                    maxX(), minY(), maxZ(),
+                    minX(), minY(), maxZ(),
+                    epsilon
+                );
+                yield t1 == -1 ? t2 : t1;
+            }
+            case UP -> {
+                final double t1 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    minX(), maxY(), minZ(),
+                    minX(), maxY(), maxZ(),
+                    maxX(), maxY(), maxZ(),
+                    epsilon
+                );
+                final double t2 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    maxX(), maxY(), maxZ(),
+                    maxX(), maxY(), minZ(),
+                    minX(), maxY(), minZ(),
+                    epsilon
+                );
+                yield t1 == -1 ? t2 : t1;
+            }
+            case NORTH -> {
+                final double t1 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    maxX(), maxY(), minZ(),
+                    maxX(), minY(), minZ(),
+                    minX(), minY(), minZ(),
+                    epsilon
+                );
+                final double t2 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    minX(), minY(), minZ(),
+                    minX(), maxY(), minZ(),
+                    maxX(), maxY(), minZ(),
+                    epsilon
+                );
+                yield t1 == -1 ? t2 : t1;
+            }
+            case SOUTH -> {
+                final double t1 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    minX(), maxY(), maxZ(),
+                    minX(), minY(), maxZ(),
+                    maxX(), minY(), maxZ(),
+                    epsilon
+                );
+                final double t2 = Intersectiond.intersectRayTriangleFront(
+                    originX, originY, originZ,
+                    dirX, dirY, dirZ,
+                    maxX(), minY(), maxZ(),
+                    maxX(), maxY(), maxZ(),
+                    minX(), maxY(), maxZ(),
+                    epsilon
+                );
+                yield t1 == -1 ? t2 : t1;
+            }
+        };
     }
 
     public boolean isEmpty() {

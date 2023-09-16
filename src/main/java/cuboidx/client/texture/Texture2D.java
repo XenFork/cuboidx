@@ -22,6 +22,8 @@ import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.util.math.MathUtil;
 import cuboidx.util.ResourceLocation;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import overrungl.opengl.GL;
 import overrungl.stb.STBImage;
 
@@ -30,6 +32,7 @@ import overrungl.stb.STBImage;
  * @since 0.1.0
  */
 public class Texture2D implements AutoCloseable {
+    private static final Logger logger = LogManager.getLogger();
     private final ResourceLocation location;
     private final int id;
     private final int width;
@@ -119,5 +122,6 @@ public class Texture2D implements AutoCloseable {
     @Override
     public void close() {
         GL.deleteTexture(id);
+        logger.debug("Cleanup Texture2D {}", location());
     }
 }

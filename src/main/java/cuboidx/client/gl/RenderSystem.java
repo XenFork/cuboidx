@@ -20,6 +20,7 @@ package cuboidx.client.gl;
 
 import cuboidx.client.texture.Texture2D;
 import org.joml.FrustumIntersection;
+import org.joml.FrustumRayBuilder;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
@@ -36,6 +37,7 @@ public final class RenderSystem {
     private static final Matrix4f projectionViewMatrix = new Matrix4f();
     private static final Matrix4f modelViewMatrix = new Matrix4f();
     private static final FrustumIntersection frustum = new FrustumIntersection();
+    private static final FrustumRayBuilder ray = new FrustumRayBuilder();
 
     ///////////////////////////////////////////////////////////////////////////
     // OpenGL state manage
@@ -152,10 +154,16 @@ public final class RenderSystem {
     }
 
     public static void updateFrustum() {
-        frustum.set(projectionViewMatrix());
+        final Matrix4f m = projectionViewMatrix();
+        frustum.set(m);
+        ray.set(m);
     }
 
     public static FrustumIntersection frustum() {
         return frustum;
+    }
+
+    public static FrustumRayBuilder ray() {
+        return ray;
     }
 }

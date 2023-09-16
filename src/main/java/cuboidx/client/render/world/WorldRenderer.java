@@ -72,8 +72,10 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
     private final ChunkCompiler compiler = new ChunkCompiler();
     private final ExecutorService threadPool;
     private final AtomicReference<HitResult> hitResult = new AtomicReference<>();
+    private final Vector3f hitOrigin = new Vector3f();
     private final Vector3f hitOrientation = new Vector3f();
     private final Vector2d hitNearFar = new Vector2d();
+    private final Vector2d hitFaceNearFar = new Vector2d();
 
     public WorldRenderer(CuboidX client, World world) {
         this.client = client;
@@ -102,7 +104,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
 
         threadPool = new ThreadPoolExecutor(MAX_COMPILE_COUNT - 1,
             MAX_COMPILE_COUNT,
-            20L,
+            10L,
             TimeUnit.SECONDS,
             new SynchronousQueue<>(),
             new ThreadFactory() {
@@ -194,8 +196,8 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
     }
 
     public void renderHitResult() {
-        final HitResult result = hitResult.get();
-        if (!result.missed()) {
+        final HitResult result = hitResult();
+        if (result != null && !result.missed()) {
             final AABBox box = result.block().outlineShape().move(
                 result.x(),
                 result.y(),
@@ -256,9 +258,11 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
         int targetX = 0;
         int targetY = 0;
         int targetZ = 0;
-        final Vector3d pos = client.camera().lerpPosition();
+        AABBox finalBox = null;
         final FrustumIntersection frustum = RenderSystem.frustum();
-        RenderSystem.viewMatrix().positiveZ(hitOrientation).negate();
+        final FrustumRayBuilder ray = RenderSystem.ray();
+        ray.origin(hitOrigin);
+        ray.dir(0.5f, 0.5f, hitOrientation);
 
         final Vector3d playerPos = client.player().position();
         final int orgX = (int) Math.floor(playerPos.x());
@@ -278,7 +282,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
                     final AABBox box = block.outlineShape().move(x, y, z);
                     if (!box.isEmpty() && box.test(frustum)) {
                         if (Intersectiond.intersectRayAab(
-                            pos.x(), pos.y(), pos.z(),
+                            hitOrigin.x(), hitOrigin.y(), hitOrigin.z(),
                             hitOrientation.x(), hitOrientation.y(), hitOrientation.z(),
                             box.minX(), box.minY(), box.minZ(),
                             box.maxX(), box.maxY(), box.maxZ(),
@@ -289,13 +293,23 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
                             targetX = x;
                             targetY = y;
                             targetZ = z;
+                            finalBox = box;
                         }
                     }
                 }
             }
         }
 
-        hitResult.set(new HitResult(target == null, targetX, targetY, targetZ, target));
+        hitResult.set(target == null ? null : new HitResult(
+            false,
+            finalBox.testSide(
+                hitOrigin.x(), hitOrigin.y(), hitOrigin.z(),
+                hitOrientation.x(), hitOrientation.y(), hitOrientation.z()
+            ),
+            targetX,
+            targetY,
+            targetZ,
+            target));
     }
 
     public HitResult hitResult() {

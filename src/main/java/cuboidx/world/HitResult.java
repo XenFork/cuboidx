@@ -18,11 +18,12 @@
 
 package cuboidx.world;
 
+import cuboidx.util.math.Direction;
 import cuboidx.world.block.BlockType;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public /* value */ record HitResult(boolean missed, int x, int y, int z, BlockType block) {
+public /* value */ record HitResult(boolean missed, Direction side, int x, int y, int z, BlockType block) {
 }
