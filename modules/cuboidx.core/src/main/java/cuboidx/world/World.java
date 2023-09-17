@@ -53,10 +53,12 @@ public final class World {
         Arrays.fill(this.blocks, BlockTypes.AIR);
         for (int x = 0; x < width; x++) {
             for (int z = 0; z < depth; z++) {
-                for (int y = 0; y < 16; y++) {
-                    setBlock(x, y, z, BlockTypes.DIRT);
+                // generate height-map
+                int noise = (int) Math.floor(SimplexOctaves.sumOctaves(8, x, z, 0.5f, 0.001f, -40f, 40f));
+                for (int y = 64 + noise; y >= 0; y--) {
+                    initBlock(x, y, z, BlockTypes.DIRT);
                 }
-                setBlock(x, 16, z, BlockTypes.GRASS_BLOCK);
+                initBlock(x, 64 + noise, z, BlockTypes.GRASS_BLOCK);
             }
         }
     }

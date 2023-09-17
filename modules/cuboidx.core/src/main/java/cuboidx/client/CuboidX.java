@@ -130,8 +130,8 @@ public final class CuboidX implements Runnable {
             EVENT_BUS.post(new RegistryEvent<>(Registries.ENTITY_TYPE));
             logger.info("Registered {} entities", Registries.ENTITY_TYPE.size());
 
-            world = new World(256, 64, 256);
-            player = world.spawn(EntityTypes.PLAYER, 128, 20, 128).get();
+            world = new World(256, 256, 256);
+            player = world.spawn(EntityTypes.PLAYER, 128, 100, 128).get();
 
             timer = Timer.ofGetter(TPS, currentTimeGetter);
 

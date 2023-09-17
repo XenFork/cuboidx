@@ -50,9 +50,8 @@ public final class Mouse {
             MouseEvent.CursorPos.free(event);
         });
         GLFW.setMouseButtonCallback(window, (h, button, action, mods) -> {
-            final PoolObjectState<MouseEvent.Button> event = MouseEvent.Button.of(button, action, mods);
-            CuboidX.EVENT_BUS.post(event.get());
-            MouseEvent.Button.free(event);
+            final MouseEvent.Button event = new MouseEvent.Button(button, action, mods);
+            CuboidX.EVENT_BUS.post(event);
         });
     }
 

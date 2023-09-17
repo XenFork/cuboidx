@@ -85,116 +85,68 @@ public final /* value */ class AABBox {
         Direction side) {
         final double epsilon = 0.001;
         return switch (side) {
-            case WEST -> {
+            case WEST, EAST -> {
+                final double vX = side.axisX() < 0 ? minX() : maxX();
+                final double v0Z = side.axisX() < 0 ? minZ() : maxZ();
+                final double v1Z = side.axisX() < 0 ? maxZ() : minZ();
                 final double t1 = Intersectiond.intersectRayTriangleFront(
                     originX, originY, originZ,
                     dirX, dirY, dirZ,
-                    minX(), maxY(), minZ(),
-                    minX(), minY(), minZ(),
-                    minX(), minY(), maxZ(),
+                    vX, maxY(), v0Z,
+                    vX, minY(), v0Z,
+                    vX, minY(), v1Z,
                     epsilon
                 );
                 final double t2 = Intersectiond.intersectRayTriangleFront(
                     originX, originY, originZ,
                     dirX, dirY, dirZ,
-                    minX(), minY(), maxZ(),
-                    minX(), maxY(), maxZ(),
-                    minX(), maxY(), minZ(),
+                    vX, minY(), v1Z,
+                    vX, maxY(), v1Z,
+                    vX, maxY(), v0Z,
                     epsilon
                 );
                 yield t1 == -1 ? t2 : t1;
             }
-            case EAST -> {
+            case DOWN, UP -> {
+                final double vY = side.axisY() < 0 ? minY() : maxY();
+                final double v0Z = side.axisY() < 0 ? maxZ() : minZ();
+                final double v1Z = side.axisY() < 0 ? minZ() : maxZ();
                 final double t1 = Intersectiond.intersectRayTriangleFront(
                     originX, originY, originZ,
                     dirX, dirY, dirZ,
-                    maxX(), maxY(), maxZ(),
-                    maxX(), minY(), maxZ(),
-                    maxX(), minY(), minZ(),
+                    minX(), vY, v0Z,
+                    minX(), vY, v1Z,
+                    maxX(), vY, v1Z,
                     epsilon
                 );
                 final double t2 = Intersectiond.intersectRayTriangleFront(
                     originX, originY, originZ,
                     dirX, dirY, dirZ,
-                    maxX(), minY(), minZ(),
-                    maxX(), maxY(), minZ(),
-                    maxX(), maxY(), maxZ(),
+                    maxX(), vY, v1Z,
+                    maxX(), vY, v0Z,
+                    minX(), vY, v0Z,
                     epsilon
                 );
                 yield t1 == -1 ? t2 : t1;
             }
-            case DOWN -> {
+            case NORTH, SOUTH -> {
+                final double vZ = side.axisZ() < 0 ? minZ() : maxZ();
+                final double v0X = side.axisZ() < 0 ? maxX() : minX();
+                final double v1X = side.axisZ() < 0 ? minX() : maxX();
                 final double t1 = Intersectiond.intersectRayTriangleFront(
                     originX, originY, originZ,
                     dirX, dirY, dirZ,
-                    minX(), minY(), maxZ(),
-                    minX(), minY(), minZ(),
-                    maxX(), minY(), minZ(),
+                    v0X, maxY(), vZ,
+                    v0X, minY(), vZ,
+                    v1X, minY(), vZ,
                     epsilon
                 );
                 final double t2 = Intersectiond.intersectRayTriangleFront(
                     originX, originY, originZ,
                     dirX, dirY, dirZ,
-                    maxX(), minY(), minZ(),
-                    maxX(), minY(), maxZ(),
-                    minX(), minY(), maxZ(),
-                    epsilon
-                );
-                yield t1 == -1 ? t2 : t1;
-            }
-            case UP -> {
-                final double t1 = Intersectiond.intersectRayTriangleFront(
-                    originX, originY, originZ,
-                    dirX, dirY, dirZ,
-                    minX(), maxY(), minZ(),
-                    minX(), maxY(), maxZ(),
-                    maxX(), maxY(), maxZ(),
-                    epsilon
-                );
-                final double t2 = Intersectiond.intersectRayTriangleFront(
-                    originX, originY, originZ,
-                    dirX, dirY, dirZ,
-                    maxX(), maxY(), maxZ(),
-                    maxX(), maxY(), minZ(),
-                    minX(), maxY(), minZ(),
-                    epsilon
-                );
-                yield t1 == -1 ? t2 : t1;
-            }
-            case NORTH -> {
-                final double t1 = Intersectiond.intersectRayTriangleFront(
-                    originX, originY, originZ,
-                    dirX, dirY, dirZ,
-                    maxX(), maxY(), minZ(),
-                    maxX(), minY(), minZ(),
-                    minX(), minY(), minZ(),
-                    epsilon
-                );
-                final double t2 = Intersectiond.intersectRayTriangleFront(
-                    originX, originY, originZ,
-                    dirX, dirY, dirZ,
-                    minX(), minY(), minZ(),
-                    minX(), maxY(), minZ(),
-                    maxX(), maxY(), minZ(),
-                    epsilon
-                );
-                yield t1 == -1 ? t2 : t1;
-            }
-            case SOUTH -> {
-                final double t1 = Intersectiond.intersectRayTriangleFront(
-                    originX, originY, originZ,
-                    dirX, dirY, dirZ,
-                    minX(), maxY(), maxZ(),
-                    minX(), minY(), maxZ(),
-                    maxX(), minY(), maxZ(),
-                    epsilon
-                );
-                final double t2 = Intersectiond.intersectRayTriangleFront(
-                    originX, originY, originZ,
-                    dirX, dirY, dirZ,
-                    maxX(), minY(), maxZ(),
-                    maxX(), maxY(), maxZ(),
-                    minX(), maxY(), maxZ(),
+                    v1X, minY(), vZ,
+                    v1X, maxY(), vZ,
+                    v0X, maxY(), vZ,
                     epsilon
                 );
                 yield t1 == -1 ? t2 : t1;

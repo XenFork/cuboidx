@@ -31,7 +31,7 @@ import java.util.StringJoiner;
  * @author squid233
  * @since 0.1.0
  */
-public sealed interface MouseEvent<T extends MouseEvent<T>> extends Event<T>, Poolable {
+public sealed interface MouseEvent<T extends MouseEvent<T>> extends Event<T> {
     @SuppressWarnings("unchecked")
     private static <T> RegistryKey<T> root() {
         class Holder {
@@ -44,7 +44,7 @@ public sealed interface MouseEvent<T extends MouseEvent<T>> extends Event<T>, Po
      * @author squid233
      * @since 0.1.0
      */
-    final class CursorPos implements MouseEvent<CursorPos> {
+    final /* value */ class CursorPos implements MouseEvent<CursorPos>, Poolable {
         public static final RegistryKey<CursorPos> ID = RegistryKey.of(MouseEvent.root(), ResourceLocation.cuboidx("cursor_pos"));
         private static final Pool<CursorPos> POOL = new ObjectPool<>(CursorPos::new);
         private double x;
@@ -122,69 +122,12 @@ public sealed interface MouseEvent<T extends MouseEvent<T>> extends Event<T>, Po
      * @author squid233
      * @since 0.1.0
      */
-    final class Button implements MouseEvent<Button> {
+    /* value */ record Button(int button, int action, int mods) implements MouseEvent<Button> {
         public static final RegistryKey<Button> ID = RegistryKey.of(MouseEvent.root(), ResourceLocation.cuboidx("button"));
-        private static final Pool<Button> POOL = new ObjectPool<>(Button::new);
-        private int button;
-        private int action;
-        private int mods;
-
-        public static PoolObjectState<Button> of(int button, int action, int mods) {
-            final PoolObjectState<Button> state = POOL.borrow().state();
-            final Button event = state.get();
-            event.button = button;
-            event.action = action;
-            event.mods = mods;
-            return state;
-        }
-
-        public static void free(PoolObjectState<Button> state) {
-            POOL.returning(state);
-        }
 
         @Override
         public RegistryKey<Button> id() {
             return ID;
-        }
-
-        @Override
-        public void reset() {
-            button = 0;
-            action = 0;
-            mods = 0;
-        }
-
-        public int button() {
-            return button;
-        }
-
-        public int action() {
-            return action;
-        }
-
-        public int mods() {
-            return mods;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Button button1)) return false;
-            return button == button1.button && action == button1.action && mods == button1.mods;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(button, action, mods);
-        }
-
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", Button.class.getSimpleName() + "[", "]")
-                .add("button=" + button)
-                .add("action=" + action)
-                .add("mods=" + mods)
-                .toString();
         }
     }
 }
