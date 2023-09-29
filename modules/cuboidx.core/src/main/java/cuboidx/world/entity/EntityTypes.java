@@ -18,15 +18,23 @@
 
 package cuboidx.world.entity;
 
+import cuboidx.client.CuboidX;
 import cuboidx.registry.Registries;
 import cuboidx.util.ResourceLocation;
+import overrungl.glfw.GLFW;
+
+import java.lang.foreign.MemorySegment;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
 public final class EntityTypes {
-    public static final EntityType PLAYER = of(1, "player", new EntityType.Builder());
+    public static final EntityType PLAYER = of(1, "player", new EntityType.Builder()
+        .tick(tick -> entity -> {
+            tick.accept(entity);
+            playerTick(entity);
+        }));
 
     private EntityTypes() {
         //no instance
@@ -37,5 +45,18 @@ public final class EntityTypes {
 
     private static EntityType of(int rawId, String name, EntityType.Builder builder) {
         return Registries.ENTITY_TYPE.set(rawId, ResourceLocation.cuboidx(name), builder.build());
+    }
+
+    private static void playerTick(Entity entity) {
+        final MemorySegment window = CuboidX.getInstance().window();
+        double xo = 0.0, yo = 0.0, zo = 0.0;
+        if (GLFW.getKey(window, GLFW.KEY_A) == GLFW.PRESS) xo--;
+        if (GLFW.getKey(window, GLFW.KEY_D) == GLFW.PRESS) xo++;
+        if (GLFW.getKey(window, GLFW.KEY_LEFT_SHIFT) == GLFW.PRESS) yo--;
+        if (GLFW.getKey(window, GLFW.KEY_SPACE) == GLFW.PRESS) yo++;
+        if (GLFW.getKey(window, GLFW.KEY_W) == GLFW.PRESS) zo--;
+        if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
+        final boolean sprint = GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS;
+        entity.moveRelative(xo, yo, zo, sprint ? 0.8 : 0.6);
     }
 }

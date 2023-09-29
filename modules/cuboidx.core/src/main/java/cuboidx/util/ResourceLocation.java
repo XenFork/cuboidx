@@ -72,13 +72,14 @@ public /* value */ record ResourceLocation(String namespace, String path) {
 
     public String toPath(@Nullable String prefix, @Nullable String type) {
         final String s = type == null
-            ? (namespace + '/' + path)
-            : (namespace + '/' + type + '/' + path);
-        return prefix == null ? s : (prefix + '/' + s);
+            ? (STR. "\{ namespace }/\{ path }" )
+            : (STR. "\{ namespace }/\{ type }/\{ path }" );
+        return prefix == null ? s : (STR. "\{ prefix }/\{ s }" );
+        // TODO: 2023/9/29 We must add parentheses
     }
 
     @Override
     public String toString() {
-        return namespace + ':' + path;
+        return STR. "\{ namespace }:\{ path }" ;
     }
 }

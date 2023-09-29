@@ -220,15 +220,6 @@ public final class CuboidX implements Runnable {
     public void tick() {
         player().tick();
         camera().tick();
-        double xo = 0.0, yo = 0.0, zo = 0.0;
-        if (GLFW.getKey(window, GLFW.KEY_A) == GLFW.PRESS) xo--;
-        if (GLFW.getKey(window, GLFW.KEY_D) == GLFW.PRESS) xo++;
-        if (GLFW.getKey(window, GLFW.KEY_LEFT_SHIFT) == GLFW.PRESS) yo--;
-        if (GLFW.getKey(window, GLFW.KEY_SPACE) == GLFW.PRESS) yo++;
-        if (GLFW.getKey(window, GLFW.KEY_W) == GLFW.PRESS) zo--;
-        if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
-        final boolean sprint = GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS;
-        player().moveRelative(xo, yo, zo, sprint ? 0.8 : 0.6);
     }
 
     public void lateUpdate() {

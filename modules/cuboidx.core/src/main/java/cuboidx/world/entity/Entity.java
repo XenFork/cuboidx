@@ -42,7 +42,7 @@ public final class Entity implements Poolable {
     }
 
     public void tick() {
-        prevPosition().set(position());
+        type().tick().accept(this);
     }
 
     public void spawn(double x, double y, double z) {
