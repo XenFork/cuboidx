@@ -33,8 +33,8 @@ import cuboidx.util.math.Direction;
 import cuboidx.world.HitResult;
 import cuboidx.world.World;
 import cuboidx.world.block.BlockTypes;
-import cuboidx.world.entity.Entity;
 import cuboidx.world.entity.EntityTypes;
+import cuboidx.world.entity.PlayerEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Math;
@@ -84,9 +84,12 @@ public final class CuboidX implements Runnable {
     private BlockRenderer blockRenderer;
     private World world;
     private WorldRenderer worldRenderer;
-    private Entity player;
+    private PlayerEntity player;
 
     private CuboidX() {
+    }
+
+    public void bootstrap() {
         OverrunGL.setApiLogger(logger::error);
         GLFWErrorCallback.createLog(logger::error).set();
         CheckUtil.check(GLFW.init(), "Unable to initialize GLFW");
@@ -101,6 +104,7 @@ public final class CuboidX implements Runnable {
         EVENT_BUS.addListener(MouseEvent.CursorPos.ID, this::onCursorPos);
         EVENT_BUS.addListener(MouseEvent.Button.ID, this::onMouseButton);
         GLFW.setKeyCallback(window, this::onKey);
+        GLFW.setScrollCallback(window, this::onScroll);
         GLFW.setFramebufferSizeCallback(window, this::onResize);
         GLFW.setWindowIconifyCallback(window, (/* TODO: unnamed parameter is NOT supported */ h, iconified) -> this.shouldRender.set(!iconified));
 
@@ -172,7 +176,7 @@ public final class CuboidX implements Runnable {
     }
 
     private void onCursorPos(MouseEvent.CursorPos event) {
-        if (mouse.mouseGrabbed()) {
+        if (mouse().mouseGrabbed()) {
             player().rotate(
                 -Math.toRadians(event.deltaY() * MOUSE_SENSITIVITY),
                 -Math.toRadians(event.deltaX() * MOUSE_SENSITIVITY),
@@ -193,7 +197,7 @@ public final class CuboidX implements Runnable {
                     final HitResult result = worldRenderer().hitResult();
                     if (result != null && !result.missed()) {
                         final Direction side = result.side();
-                        world().setBlock(result.x() + side.axisX(), result.y() + side.axisY(), result.z() + side.axisZ(), BlockTypes.DIRT);
+                        world().setBlock(result.x() + side.axisX(), result.y() + side.axisY(), result.z() + side.axisZ(), player().mainHandItem());
                     }
                 }
             }
@@ -201,12 +205,38 @@ public final class CuboidX implements Runnable {
     }
 
     private void onKey(MemorySegment window, int key, int scancode, int action, int mods) {
-        if (action == GLFW.RELEASE) {
-            if (key == GLFW.KEY_GRAVE_ACCENT) {
-                mouse.setMouseGrabbed(!mouse.mouseGrabbed());
+        switch (action) {
+            case GLFW.PRESS -> {
+                if (world() != null && player() != null) {
+                    switch (key) {
+                        case GLFW.KEY_1 -> player().setHotBarTo(0);
+                        case GLFW.KEY_2 -> player().setHotBarTo(1);
+                        case GLFW.KEY_3 -> player().setHotBarTo(2);
+                    }
+                }
             }
-            if (key == GLFW.KEY_F3 && worldRenderer() != null) {
-                worldRenderer().setShouldRenderDebugHud(!worldRenderer().shouldRenderDebugHud());
+            case GLFW.RELEASE -> {
+                switch (key) {
+                    case GLFW.KEY_GRAVE_ACCENT -> mouse().setMouseGrabbed(!mouse().mouseGrabbed());
+                    case GLFW.KEY_F3 -> {
+                        if (worldRenderer() != null) {
+                            worldRenderer().setShouldRenderDebugHud(!worldRenderer().shouldRenderDebugHud());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void onScroll(MemorySegment window, double offsetX, double offsetY) {
+        if (world() != null && player() != null) {
+            int i = player().hotBarIndex();
+            if (offsetY < 0) {
+                i++;
+                player().setHotBarTo(i > PlayerEntity.MAX_HOT_BAR_INDEX ? 0 : i);
+            } else if (offsetY > 0) {
+                i--;
+                player().setHotBarTo(i < 0 ? PlayerEntity.MAX_HOT_BAR_INDEX : i);
             }
         }
     }
@@ -277,6 +307,10 @@ public final class CuboidX implements Runnable {
         return window;
     }
 
+    public Mouse mouse() {
+        return mouse;
+    }
+
     public int width() {
         return width.get();
     }
@@ -313,7 +347,7 @@ public final class CuboidX implements Runnable {
         return worldRenderer;
     }
 
-    public Entity player() {
+    public PlayerEntity player() {
         return player;
     }
 

@@ -41,7 +41,7 @@ public final class World {
     private final int height;
     private final int depth;
     private final BlockType[] blocks;
-    private final KeyedPool<EntityType, Entity> entityPool = new KeyedObjectPool<>(Entity::new);
+    private final KeyedPool<EntityType<Entity>, Entity> entityPool = new KeyedObjectPool<>(type -> type.constructor().get());
     private final List<Entity> entities = new ArrayList<>();
     private final List<WorldListener> listeners = new ArrayList<>();
 
@@ -70,14 +70,15 @@ public final class World {
         listeners.add(listener);
     }
 
-    public KeyedPoolObjectState<EntityType, Entity> spawn(EntityType entityType, double x, double y, double z) {
-        final var state = entityPool.borrow(entityType).state();
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public <T extends Entity> KeyedPoolObjectState<EntityType<T>, T> spawn(EntityType<T> entityType, double x, double y, double z) {
+        final var state = entityPool.borrow((EntityType<Entity>) entityType).state();
         final Entity entity = state.get();
         entity.setWorld(this);
         entity.setUuid(UUID.randomUUID());
         entity.spawn(x, y, z);
         entities.add(entity);
-        return state;
+        return (KeyedPoolObjectState) state;
     }
 
     public @Nullable Entity findEntity(UUID uuid) {
@@ -87,7 +88,7 @@ public final class World {
         return null;
     }
 
-    public void removeEntity(KeyedPoolObjectState<EntityType, Entity> entity) {
+    public void removeEntity(KeyedPoolObjectState<EntityType<Entity>, Entity> entity) {
         entities.remove(entity.get());
         entityPool.returning(entity);
     }

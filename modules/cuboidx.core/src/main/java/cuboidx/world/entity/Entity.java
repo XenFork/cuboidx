@@ -29,20 +29,20 @@ import java.util.UUID;
  * @author squid233
  * @since 0.1.0
  */
-public final class Entity implements Poolable {
-    private final EntityType type;
+public class Entity implements Poolable {
+    private final EntityType<?> type;
     private World world;
     private UUID uuid;
     private final Vector3d prevPosition = new Vector3d();
     private final Vector3d position = new Vector3d();
     private final Vector3d rotation = new Vector3d();
 
-    public Entity(EntityType type) {
+    public Entity(EntityType<?> type) {
         this.type = type;
     }
 
     public void tick() {
-        type().tick().accept(this);
+        prevPosition().set(position());
     }
 
     public void spawn(double x, double y, double z) {
@@ -85,7 +85,7 @@ public final class Entity implements Poolable {
         rotation.zero();
     }
 
-    public EntityType type() {
+    public EntityType<?> type() {
         return type;
     }
 

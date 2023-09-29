@@ -18,24 +18,23 @@
 
 package cuboidx.world.entity;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author squid233
  * @since 0.1.0
  */
-public final class EntityType {
+public final class EntityType<T extends Entity> {
     private final boolean limitedPitch;
     private final double eyeHeight;
-    private final Consumer<Entity> tick;
+    private final Supplier<T> constructor;
 
     private EntityType(boolean limitedPitch,
                        double eyeHeight,
-                       Consumer<Entity> tick) {
+                       Supplier<T> constructor) {
         this.limitedPitch = limitedPitch;
         this.eyeHeight = eyeHeight;
-        this.tick = tick;
+        this.constructor = constructor;
     }
 
     /**
@@ -45,7 +44,6 @@ public final class EntityType {
     public static final class Builder {
         private boolean limitedPitch = true;
         private double eyeHeight = 1.71;
-        private Consumer<Entity> tick = entity -> entity.prevPosition().set(entity.position());
 
         public Builder limitedPitch(boolean limitedPitch) {
             this.limitedPitch = limitedPitch;
@@ -57,13 +55,8 @@ public final class EntityType {
             return this;
         }
 
-        public Builder tick(Function<Consumer<Entity>, Consumer<Entity>> tick) {
-            this.tick = tick.apply(this.tick);
-            return this;
-        }
-
-        public EntityType build() {
-            return new EntityType(limitedPitch, eyeHeight, tick);
+        public <T extends Entity> EntityType<T> build(Supplier<T> constructor) {
+            return new EntityType<>(limitedPitch, eyeHeight, constructor);
         }
     }
 
@@ -75,7 +68,7 @@ public final class EntityType {
         return eyeHeight;
     }
 
-    public Consumer<Entity> tick() {
-        return tick;
+    public Supplier<T> constructor() {
+        return constructor;
     }
 }

@@ -31,7 +31,6 @@ import cuboidx.world.HitResult;
 import cuboidx.world.World;
 import cuboidx.world.WorldListener;
 import cuboidx.world.block.BlockType;
-import cuboidx.world.block.BlockTypes;
 import cuboidx.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -288,7 +287,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
         RenderSystem.bindTexture2D(client.textureManager().get(TextureAtlas.BLOCK_ATLAS));
         final Tessellator t = Tessellator.getInstance();
         t.begin(GLDrawMode.TRIANGLES, false);
-        client.blockRenderer().renderBlock(t, BlockTypes.DIRT, -1, -1, -1);
+        client.blockRenderer().renderBlock(t, client.player().mainHandItem(), -1, -1, -1);
         t.end();
         RenderSystem.bindTexture2D(0);
 
