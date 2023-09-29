@@ -38,6 +38,9 @@ public final class BlockTypes {
     public static final BlockType DIRT = of(2, "dirt", new BlockType.Builder()
         .texture(direction -> ResourceLocation.cuboidx("block/dirt"))
     );
+    public static final BlockType STONE = of(3, "stone", new BlockType.Builder()
+        .texture(direction -> ResourceLocation.cuboidx("block/stone"))
+    );
 
     private BlockTypes() {
         //no instance

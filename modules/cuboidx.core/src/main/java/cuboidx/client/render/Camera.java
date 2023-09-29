@@ -27,7 +27,7 @@ import org.overrun.timer.Timer;
  * @author squid233
  * @since 0.1.0
  */
-public final class Camera {
+public final /* value */ class Camera {
     private final Vector3d prevPosition = new Vector3d();
     private final Vector3d position = new Vector3d();
     private final Vector3d lerpPosition = new Vector3d();

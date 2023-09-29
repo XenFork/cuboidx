@@ -93,6 +93,11 @@ public final class RenderSystem {
         GLStateMgr.depthFunc(func);
     }
 
+    public static void enableDepthTest(int func) {
+        enableDepthTest();
+        depthFunc(func);
+    }
+
     public static void enableCullFace() {
         GLStateMgr.enableCullFace();
     }

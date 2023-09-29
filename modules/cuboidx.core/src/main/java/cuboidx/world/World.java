@@ -56,6 +56,9 @@ public final class World {
                 // generate height-map
                 int noise = (int) Math.floor(SimplexOctaves.sumOctaves(8, x, z, 0.5f, 0.001f, -40f, 40f));
                 for (int y = 64 + noise; y >= 0; y--) {
+                    initBlock(x, y, z, BlockTypes.STONE);
+                }
+                for (int y = 64 + noise, y0 = 61 + noise; y >= y0; y--) {
                     initBlock(x, y, z, BlockTypes.DIRT);
                 }
                 initBlock(x, 64 + noise, z, BlockTypes.GRASS_BLOCK);

@@ -84,10 +84,11 @@ public final class Tessellator implements VertexBuilder {
         );
     }
 
-    public void begin(GLDrawMode mode) {
+    public void begin(GLDrawMode mode, boolean useAutoIndices) {
         this.mode = mode;
         vertexCount = 0;
         indexCount = 0;
+        autoIndices = useAutoIndices;
     }
 
     public void end() {
@@ -126,14 +127,6 @@ public final class Tessellator implements VertexBuilder {
 
         vertexCount = 0;
         indexCount = 0;
-    }
-
-    public void enableAutoIndices() {
-        autoIndices = true;
-    }
-
-    public void disableAutoIndices() {
-        autoIndices = false;
     }
 
     @Override

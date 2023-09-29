@@ -22,6 +22,7 @@ import cuboidx.client.CuboidX;
 import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
+import cuboidx.client.render.GraphicsUtil;
 import cuboidx.client.render.Tessellator;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.util.math.AABBox;
@@ -75,7 +76,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
     private final Vector3f hitOrigin = new Vector3f();
     private final Vector3f hitOrientation = new Vector3f();
     private final Vector2d hitNearFar = new Vector2d();
-    private final Vector2d hitFaceNearFar = new Vector2d();
+    private volatile boolean shouldRenderDebugHud = false;
 
     public WorldRenderer(CuboidX client, World world) {
         this.client = client;
@@ -158,8 +159,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
 
         // initialize states
         RenderSystem.enableCullFace();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL.LEQUAL);
+        RenderSystem.enableDepthTest(GL.LEQUAL);
 
         RenderSystem.projectionMatrix().setPerspective(
             (float) Math.toRadians(90.0),
@@ -209,6 +209,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
             final float y1 = (float) box.maxY();
             final float z1 = (float) box.maxZ();
 
+            final float lineWidth = GLStateMgr.lineWidth();
             RenderSystem.lineWidth(2);
             RenderSystem.enableLineSmooth();
             RenderSystem.polygonOffset(-0.1f, 0.2f);
@@ -222,8 +223,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
             });
 
             final Tessellator t = Tessellator.getInstance();
-            t.begin(GLDrawMode.LINES);
-            t.disableAutoIndices();
+            t.begin(GLDrawMode.LINES, false);
             t.indices(
                 // x
                 3, 7, 1, 5, 0, 4, 2, 6,
@@ -233,22 +233,56 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
                 2, 3, 0, 1, 4, 5, 6, 7
             );
             t.color(0, 0, 0, 1);
-            t.vertex(x0, y0, z0).emit(); // 0
-            t.vertex(x0, y0, z1).emit(); // 1
-            t.vertex(x0, y1, z0).emit(); // 2
-            t.vertex(x0, y1, z1).emit(); // 3
-            t.vertex(x1, y0, z0).emit(); // 4
-            t.vertex(x1, y0, z1).emit(); // 5
-            t.vertex(x1, y1, z0).emit(); // 6
-            t.vertex(x1, y1, z1).emit(); // 7
+            GraphicsUtil.emitCuboidVertex(t, x0, y0, z0, x1, y1, z1);
             t.end();
 
             RenderSystem.useProgram(currentProgram);
 
-            RenderSystem.lineWidth(1);
+            RenderSystem.lineWidth(lineWidth);
             RenderSystem.disableLineSmooth();
             RenderSystem.disablePolygonOffsetLine();
         }
+    }
+
+    public void renderGui(double partialTick) {
+        // draw crossing
+        RenderSystem.modelMatrix().pushMatrix().translation(client.width() * 0.5f, client.height() * 0.5f, 0);
+        if (shouldRenderDebugHud()) {
+            final Vector3d rotation = client.camera().rotation();
+            RenderSystem.modelMatrix().rotateXYZ((float) -rotation.x(), (float) -rotation.y(), (float) -rotation.z());
+        }
+        final int currentProgram = GLStateMgr.currentProgram();
+        RenderSystem.useProgram(client.gameRenderer().positionColorProgram(), p -> {
+            p.projectionMatrix().set(RenderSystem.projectionMatrix());
+            p.modelViewMatrix().set(RenderSystem.modelViewMatrix());
+            p.specifyUniforms();
+        });
+        RenderSystem.modelMatrix().popMatrix();
+        final Tessellator t = Tessellator.getInstance();
+        if (shouldRenderDebugHud()) {
+            RenderSystem.enableDepthTest(GL.LEQUAL);
+
+            t.begin(GLDrawMode.QUADS, false);
+            GraphicsUtil.drawCuboid(t.color(1, 0, 0, 1), 0, 0, 0, 16, 1, 1);
+            GraphicsUtil.drawCuboid(t.color(0, 1, 0, 1), 0, 0, 0, 1, 16, 1);
+            GraphicsUtil.drawCuboid(t.color(0, 0, 1, 1), 0, 0, 0, 1, 1, 16);
+            t.end();
+
+            RenderSystem.disableDepthTest();
+        } else {
+            t.begin(GLDrawMode.QUADS, true);
+            t.color(1, 1, 1, 1);
+            t.vertex(-8, 1, 0).emit();
+            t.vertex(-8, -1, 0).emit();
+            t.vertex(8, -1, 0).emit();
+            t.vertex(8, 1, 0).emit();
+            t.vertex(-1, 8, 0).emit();
+            t.vertex(-1, -8, 0).emit();
+            t.vertex(1, -8, 0).emit();
+            t.vertex(1, 8, 0).emit();
+            t.end();
+        }
+        RenderSystem.useProgram(currentProgram);
     }
 
     private void getHitBlock() {
@@ -327,6 +361,14 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
             Math.floorDiv(y, Chunk.SIZE),
             Math.floorDiv(z, Chunk.SIZE)
         );
+    }
+
+    public boolean shouldRenderDebugHud() {
+        return shouldRenderDebugHud;
+    }
+
+    public void setShouldRenderDebugHud(boolean shouldRenderDebugHud) {
+        this.shouldRenderDebugHud = shouldRenderDebugHud;
     }
 
     @Override

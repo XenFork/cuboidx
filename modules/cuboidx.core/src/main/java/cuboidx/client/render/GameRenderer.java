@@ -19,9 +19,7 @@
 package cuboidx.client.render;
 
 import cuboidx.client.CuboidX;
-import cuboidx.client.gl.GLDrawMode;
 import cuboidx.client.gl.GLProgram;
-import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.client.texture.TextureAtlas;
 import cuboidx.registry.Registries;
@@ -78,29 +76,7 @@ public final class GameRenderer implements AutoCloseable {
         GL.clear(GL.DEPTH_BUFFER_BIT);
         RenderSystem.projectionMatrix().setOrtho(0, client.width(), 0, client.height(), -100, 100);
         RenderSystem.viewMatrix().identity();
-        // draw crossing
-        RenderSystem.modelMatrix().pushMatrix().translation(client.width() * 0.5f, client.height() * 0.5f, 0);
-        final int currentProgram = GLStateMgr.currentProgram();
-        RenderSystem.useProgram(positionColorProgram(), p -> {
-            p.projectionMatrix().set(RenderSystem.projectionMatrix());
-            p.modelViewMatrix().set(RenderSystem.modelViewMatrix());
-            p.specifyUniforms();
-        });
-        RenderSystem.modelMatrix().popMatrix();
-        final Tessellator t = Tessellator.getInstance();
-        t.begin(GLDrawMode.QUADS);
-        t.enableAutoIndices();
-        t.color(1, 1, 1, 1);
-        t.vertex(-8, 1, 0).emit();
-        t.vertex(-8, -1, 0).emit();
-        t.vertex(8, -1, 0).emit();
-        t.vertex(8, 1, 0).emit();
-        t.vertex(-1, 8, 0).emit();
-        t.vertex(-1, -8, 0).emit();
-        t.vertex(1, -8, 0).emit();
-        t.vertex(1, 8, 0).emit();
-        t.end();
-        RenderSystem.useProgram(currentProgram);
+        client.worldRenderer().renderGui(partialTick);
     }
 
     public GLProgram positionColorProgram() {
