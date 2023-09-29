@@ -57,6 +57,18 @@ public final class RenderSystem {
         return program;
     }
 
+    public static void programSetupMatrix(GLProgram program) {
+        final GLUniform projectionMatrix1 = program.projectionMatrix();
+        if (projectionMatrix1 != null) {
+            projectionMatrix1.set(projectionMatrix());
+        }
+        final GLUniform modelViewMatrix1 = program.modelViewMatrix();
+        if (modelViewMatrix1 != null) {
+            modelViewMatrix1.set(modelViewMatrix());
+        }
+        program.specifyUniforms();
+    }
+
     public static void bindVertexArray(int array) {
         GLStateMgr.bindVertexArray(array);
     }

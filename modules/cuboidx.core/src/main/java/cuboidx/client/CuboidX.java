@@ -228,7 +228,7 @@ public final class CuboidX implements Runnable {
         if (GLFW.getKey(window, GLFW.KEY_W) == GLFW.PRESS) zo--;
         if (GLFW.getKey(window, GLFW.KEY_S) == GLFW.PRESS) zo++;
         final boolean sprint = GLFW.getKey(window, GLFW.KEY_LEFT_CONTROL) == GLFW.PRESS;
-        player().moveRelative(xo, yo, zo, sprint ? 0.3 : 0.1);
+        player().moveRelative(xo, yo, zo, sprint ? 0.8 : 0.6);
     }
 
     public void lateUpdate() {

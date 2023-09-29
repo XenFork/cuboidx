@@ -37,7 +37,6 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -68,7 +67,6 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
     private final CuboidX client;
     private final AtomicBoolean dirty = new AtomicBoolean(true);
     private final AtomicBoolean submitted = new AtomicBoolean();
-    private final AtomicLong dirtyTime = new AtomicLong(System.currentTimeMillis());
 
     public ClientChunk(CuboidX client,
                        World world,
@@ -258,7 +256,6 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
 
     public void markDirty() {
         dirty.set(true);
-        dirtyTime.set(System.currentTimeMillis());
     }
 
     public void markNotDirty() {
@@ -267,10 +264,6 @@ public final class ClientChunk extends Chunk implements AutoCloseable {
 
     public boolean dirty() {
         return dirty.get();
-    }
-
-    public long dirtyTime() {
-        return dirtyTime.get();
     }
 
     public void setSubmitted(boolean submitted) {

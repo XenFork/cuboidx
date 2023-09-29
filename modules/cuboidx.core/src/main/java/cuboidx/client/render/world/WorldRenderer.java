@@ -31,6 +31,7 @@ import cuboidx.world.HitResult;
 import cuboidx.world.World;
 import cuboidx.world.WorldListener;
 import cuboidx.world.block.BlockType;
+import cuboidx.world.block.BlockTypes;
 import cuboidx.world.chunk.Chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -126,31 +127,22 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
     }
 
     public void compileChunks() {
-        dirtyChunks.clear();
-        for (int i = 0, j = 0; i < chunks.length && j < MAX_COMPILE_COUNT; i++) {
-            ClientChunk chunk = chunks[i];
-            // TODO: 2023/7/8 Receiving changes
-            if (chunk.dirty() && !chunk.submitted()) {
-                dirtyChunks.add(chunk);
-                j++;
+        for (ClientChunk chunk : chunks) {
+            if (chunk.dirty()) {
+                CompletableFuture.supplyAsync(() -> {
+                    chunk.setSubmitted(true);
+                    final var builder = compiler.borrow(BlockRenderLayer.OPAQUE);
+                    chunk.compile(builder.get());
+                    compiler.returning(builder);
+                    return chunk;
+                }, threadPool).thenAccept(clientChunk -> {
+                    final ClientChunk.CompileStates states = clientChunk.states();
+                    states.setUploaded(false);
+                    clientChunk.setSubmitted(false);
+                    clientChunk.markNotDirty();
+                    states.markCompiled();
+                });
             }
-        }
-        dirtyChunks.sort(new DirtyChunkSorter(client.player(), RenderSystem.frustum()));
-        for (int i = 0; i < dirtyChunks.size() && i < MAX_COMPILE_COUNT; i++) {
-            final ClientChunk chunk = dirtyChunks.get(i);
-            CompletableFuture.supplyAsync(() -> {
-                chunk.setSubmitted(true);
-                final var builder = compiler.borrow(BlockRenderLayer.OPAQUE);
-                chunk.compile(builder.get());
-                compiler.returning(builder);
-                return chunk;
-            }, threadPool).thenAccept(clientChunk -> {
-                final ClientChunk.CompileStates states = clientChunk.states();
-                states.setUploaded(false);
-                clientChunk.setSubmitted(false);
-                clientChunk.markNotDirty();
-                states.markCompiled();
-            });
         }
     }
 
@@ -171,11 +163,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
         client.camera().viewMatrix(RenderSystem.viewMatrix());
         RenderSystem.updateFrustum();
         final int currentProgram = GLStateMgr.currentProgram();
-        RenderSystem.useProgram(client.gameRenderer().positionColorTextureProgram(), program -> {
-            program.projectionMatrix().set(RenderSystem.projectionMatrix());
-            program.modelViewMatrix().set(RenderSystem.modelViewMatrix());
-            program.specifyUniforms();
-        });
+        RenderSystem.useProgram(client.gameRenderer().positionColorTextureProgram(), RenderSystem::programSetupMatrix);
         RenderSystem.bindTexture2D(client.textureManager().get(TextureAtlas.BLOCK_ATLAS));
 
         // render
@@ -216,11 +204,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
             RenderSystem.enablePolygonOffsetLine();
 
             final int currentProgram = GLStateMgr.currentProgram();
-            RenderSystem.useProgram(client.gameRenderer().positionColorProgram(), program -> {
-                program.projectionMatrix().set(RenderSystem.projectionMatrix());
-                program.modelViewMatrix().set(RenderSystem.modelViewMatrix());
-                program.specifyUniforms();
-            });
+            RenderSystem.useProgram(client.gameRenderer().positionColorProgram(), RenderSystem::programSetupMatrix);
 
             final Tessellator t = Tessellator.getInstance();
             t.begin(GLDrawMode.LINES, false);
@@ -246,17 +230,20 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
 
     public void renderGui(double partialTick) {
         // draw crossing
+        renderCrossing();
+
+        // draw block in hand
+        renderBlockInHand();
+    }
+
+    private void renderCrossing() {
         RenderSystem.modelMatrix().pushMatrix().translation(client.width() * 0.5f, client.height() * 0.5f, 0);
         if (shouldRenderDebugHud()) {
             final Vector3d rotation = client.camera().rotation();
             RenderSystem.modelMatrix().rotateXYZ((float) -rotation.x(), (float) -rotation.y(), (float) -rotation.z());
         }
         final int currentProgram = GLStateMgr.currentProgram();
-        RenderSystem.useProgram(client.gameRenderer().positionColorProgram(), p -> {
-            p.projectionMatrix().set(RenderSystem.projectionMatrix());
-            p.modelViewMatrix().set(RenderSystem.modelViewMatrix());
-            p.specifyUniforms();
-        });
+        RenderSystem.useProgram(client.gameRenderer().positionColorProgram(), RenderSystem::programSetupMatrix);
         RenderSystem.modelMatrix().popMatrix();
         final Tessellator t = Tessellator.getInstance();
         if (shouldRenderDebugHud()) {
@@ -283,6 +270,32 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
             t.end();
         }
         RenderSystem.useProgram(currentProgram);
+    }
+
+    private void renderBlockInHand() {
+        RenderSystem.enableCullFace();
+        RenderSystem.enableDepthTest(GL.LEQUAL);
+
+        RenderSystem.modelMatrix().pushMatrix()
+            .translation(30f, 30f, 0f)
+            .rotateX((float) Math.toRadians(30))
+            .rotateY((float) Math.toRadians(-45))
+            .scale(32f);
+        final int currentProgram = GLStateMgr.currentProgram();
+        RenderSystem.useProgram(client.gameRenderer().positionColorTextureProgram(), RenderSystem::programSetupMatrix);
+        RenderSystem.modelMatrix().popMatrix();
+
+        RenderSystem.bindTexture2D(client.textureManager().get(TextureAtlas.BLOCK_ATLAS));
+        final Tessellator t = Tessellator.getInstance();
+        t.begin(GLDrawMode.TRIANGLES, false);
+        client.blockRenderer().renderBlock(t, BlockTypes.DIRT, -1, -1, -1);
+        t.end();
+        RenderSystem.bindTexture2D(0);
+
+        RenderSystem.useProgram(currentProgram);
+
+        RenderSystem.disableCullFace();
+        RenderSystem.disableDepthTest();
     }
 
     private void getHitBlock() {
