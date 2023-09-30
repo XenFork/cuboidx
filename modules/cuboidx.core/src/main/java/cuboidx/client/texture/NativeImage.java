@@ -27,6 +27,7 @@ import org.overrun.binpacking.PackerRegion;
 import overrungl.stb.STBImage;
 import overrungl.util.MemoryStack;
 
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -39,7 +40,6 @@ import java.util.Optional;
 public /* value */ record NativeImage(int width, int height, MemorySegment data, boolean failed, int format)
     implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
-    private static NativeImage failImage;
 
     /**
      * @param <T> the type of the userdata.
@@ -103,18 +103,22 @@ public /* value */ record NativeImage(int width, int height, MemorySegment data,
     }
 
     public static NativeImage fail() {
-        if (failImage == null) {
-            final MemorySegment data = Arena.global().allocateArray(ValueLayout.JAVA_INT, 16 * 16);
-            for (int x = 0; x < 16; x++) {
-                for (int y = 0; y < 16; y++) {
-                    data.setAtIndex(ValueLayout.JAVA_INT,
-                        y * 16 + x,
-                        (x >= 8) ^ (y >= 8) ? 0xff000000 : 0xfff800f8);
+        class Holder {
+            private static final NativeImage failImage;
+
+            static {
+                final MemorySegment data = Arena.global().allocateArray(ValueLayout.JAVA_INT, 16 * 16);
+                for (int x = 0; x < 16; x++) {
+                    for (int y = 0; y < 16; y++) {
+                        data.setAtIndex(ValueLayout.JAVA_INT,
+                            y * 16 + x,
+                            (x >= 8) ^ (y >= 8) ? 0xff000000 : 0xfff800f8);
+                    }
                 }
+                failImage = new NativeImage(16, 16, data, true, STBImage.RGB_ALPHA);
             }
-            failImage = new NativeImage(16, 16, data, true, STBImage.RGB_ALPHA);
         }
-        return failImage;
+        return Holder.failImage;
     }
 
     public static NativeImage load(String path) {
@@ -122,8 +126,13 @@ public /* value */ record NativeImage(int width, int height, MemorySegment data,
     }
 
     public static NativeImage load(String path, int channels) {
-        final MemorySegment segment = FileUtil.readBinary(path, 8192);
-        if (segment == null) return fail();
+        final MemorySegment segment;
+        try {
+            segment = FileUtil.readBinary(path, 8192);
+        } catch (IOException e) {
+            logger.catching(e);
+            return fail();
+        }
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final MemorySegment px = stack.calloc(ValueLayout.JAVA_INT);
             final MemorySegment py = stack.calloc(ValueLayout.JAVA_INT);
@@ -138,7 +147,7 @@ public /* value */ record NativeImage(int width, int height, MemorySegment data,
                 py.get(ValueLayout.JAVA_INT, 0),
                 data,
                 false,
-                channels
+                pc.get(ValueLayout.JAVA_INT, 0)
             );
         }
     }

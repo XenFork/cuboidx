@@ -31,12 +31,13 @@ import java.lang.foreign.MemorySegment;
  */
 // TODO: 2023/9/29 We will keep using inheriting until we have value objects.
 public final class PlayerEntity extends Entity {
-    public static final int MAX_HOT_BAR_INDEX = 2;
+    public static final int MAX_HOT_BAR_INDEX = 3;
     private BlockType mainHandItem = BlockTypes.GRASS_BLOCK;
     private final BlockType[] hotBar = {
         BlockTypes.GRASS_BLOCK,
         BlockTypes.DIRT,
-        BlockTypes.STONE
+        BlockTypes.STONE,
+        BlockTypes.FACING_INDICATOR
     };
     private int hotBarIndex = 0;
 

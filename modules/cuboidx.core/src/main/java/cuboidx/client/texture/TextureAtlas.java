@@ -21,6 +21,7 @@ package cuboidx.client.texture;
 import cuboidx.client.gl.GLStateMgr;
 import cuboidx.client.gl.RenderSystem;
 import cuboidx.util.ResourceLocation;
+import cuboidx.util.math.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.overrun.binpacking.*;
@@ -59,8 +60,8 @@ public final class TextureAtlas extends Texture2D {
             }
             packer.fit(Packer.sort(regions));
 
-            final int width = packer.width();
-            final int height = packer.height();
+            final int width = MathUtil.nearestPOT(packer.width());
+            final int height = MathUtil.nearestPOT(packer.height());
             final TextureAtlas atlas;
             final int textureBinding2D = GLStateMgr.textureBinding2D();
 

@@ -40,9 +40,6 @@ import overrungl.opengl.GL;
 
 import java.lang.Math;
 import java.lang.Runtime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -69,7 +66,6 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
     private final World world;
     private final int xChunks, yChunks, zChunks;
     private final ClientChunk[] chunks;
-    private final List<ClientChunk> dirtyChunks;
     private final ChunkCompiler compiler = new ChunkCompiler();
     private final ExecutorService threadPool;
     private final AtomicReference<HitResult> hitResult = new AtomicReference<>();
@@ -101,7 +97,6 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
                 }
             }
         }
-        this.dirtyChunks = Collections.synchronizedList(new ArrayList<>(chunks.length));
 
         threadPool = new ThreadPoolExecutor(MAX_COMPILE_COUNT - 1,
             MAX_COMPILE_COUNT,
@@ -126,6 +121,7 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
     }
 
     public void compileChunks() {
+        if (threadPool.isShutdown()) return;
         for (ClientChunk chunk : chunks) {
             if (chunk.dirty()) {
                 CompletableFuture.supplyAsync(() -> {
@@ -399,11 +395,11 @@ public final class WorldRenderer implements WorldListener, AutoCloseable {
 
     @Override
     public void close() {
+        threadPool.close();
         for (ClientChunk chunk : chunks) {
             chunk.close();
         }
         compiler.close();
-        threadPool.shutdown();
         logger.info("Cleaned up WorldRenderer");
     }
 }

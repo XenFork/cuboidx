@@ -30,4 +30,9 @@ public final class MathUtil {
     public static boolean isEven(int i) {
         return (i & 1) == 0;
     }
+
+    public static int nearestPOT(int i) {
+        int highestOneBit = Integer.highestOneBit(i);
+        return i == highestOneBit ? i : highestOneBit << 1;
+    }
 }

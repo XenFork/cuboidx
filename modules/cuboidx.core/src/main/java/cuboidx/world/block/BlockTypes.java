@@ -30,9 +30,9 @@ public final class BlockTypes {
     public static final BlockType AIR = of(0, "air", new BlockType.Builder().air().outlineShape(AABBox::empty));
     public static final BlockType GRASS_BLOCK = of(1, "grass_block", new BlockType.Builder()
         .texture(direction -> switch (direction) {
-            case WEST, EAST, NORTH, SOUTH -> ResourceLocation.cuboidx("block/grass_block_side");
             case DOWN -> ResourceLocation.cuboidx("block/dirt");
             case UP -> ResourceLocation.cuboidx("block/grass_block_top");
+            default -> ResourceLocation.cuboidx("block/grass_block_side");
         })
     );
     public static final BlockType DIRT = of(2, "dirt", new BlockType.Builder()
@@ -40,6 +40,28 @@ public final class BlockTypes {
     );
     public static final BlockType STONE = of(3, "stone", new BlockType.Builder()
         .texture(direction -> ResourceLocation.cuboidx("block/stone"))
+    );
+    public static final BlockType COBBLESTONE = of(4, "cobblestone", new BlockType.Builder()
+        .texture(direction -> ResourceLocation.cuboidx("block/cobblestone"))
+    );
+    public static final BlockType OAK_LOG = of(5, "oak_log", new BlockType.Builder()
+        .texture(direction -> switch (direction) {
+            case UP, DOWN -> ResourceLocation.cuboidx("block/oak_log_top");
+            default -> ResourceLocation.cuboidx("block/oak_log_side");
+        })
+    );
+    public static final BlockType OAK_LEAVES = of(6, "oak_leaves", new BlockType.Builder()
+        .texture(direction -> ResourceLocation.cuboidx("block/oak_leaves"))
+    );
+    public static final BlockType FACING_INDICATOR = of(7, "facing_indicator", new BlockType.Builder()
+        .texture(direction -> switch (direction) {
+            case WEST -> ResourceLocation.cuboidx("block/facing_indicator_west");
+            case EAST -> ResourceLocation.cuboidx("block/facing_indicator_east");
+            case DOWN -> ResourceLocation.cuboidx("block/facing_indicator_down");
+            case UP -> ResourceLocation.cuboidx("block/facing_indicator_up");
+            case NORTH -> ResourceLocation.cuboidx("block/facing_indicator_north");
+            case SOUTH -> ResourceLocation.cuboidx("block/facing_indicator_south");
+        })
     );
 
     private BlockTypes() {

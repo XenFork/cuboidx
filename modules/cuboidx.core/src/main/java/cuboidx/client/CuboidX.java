@@ -23,6 +23,7 @@ import cuboidx.client.render.Camera;
 import cuboidx.client.render.GameRenderer;
 import cuboidx.client.render.world.BlockRenderer;
 import cuboidx.client.render.world.WorldRenderer;
+import cuboidx.client.texture.NativeImage;
 import cuboidx.client.texture.TextureManager;
 import cuboidx.event.EventBus;
 import cuboidx.event.RegistryEvent;
@@ -40,20 +41,22 @@ import org.apache.logging.log4j.Logger;
 import org.joml.Math;
 import org.overrun.timer.Timer;
 import overrungl.OverrunGL;
-import overrungl.glfw.GLFW;
-import overrungl.glfw.GLFWCallbacks;
-import overrungl.glfw.GLFWErrorCallback;
-import overrungl.glfw.GLFWVidMode;
+import overrungl.glfw.*;
 import overrungl.opengl.GL;
 import overrungl.opengl.GLLoader;
+import overrungl.os.Platform;
 import overrungl.util.CheckUtil;
 import overrungl.util.value.Pair;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleSupplier;
+import java.util.function.Predicate;
 
 /**
  * @author squid233
@@ -100,6 +103,7 @@ public final class CuboidX implements Runnable {
         GLFW.windowHint(GLFW.OPENGL_FORWARD_COMPAT, true);
         window = GLFW.createWindow(854, 480, STR. "CuboidX \{ VERSION }" , MemorySegment.NULL, MemorySegment.NULL);
         CheckUtil.checkNotNullptr(window, "Failed to create the GLFW window");
+        loadIcon();
         mouse = new Mouse(window);
         EVENT_BUS.addListener(MouseEvent.CursorPos.ID, this::onCursorPos);
         EVENT_BUS.addListener(MouseEvent.Button.ID, this::onMouseButton);
@@ -142,7 +146,7 @@ public final class CuboidX implements Runnable {
             GLFW.showWindow(window);
             renderThread = new Thread(this, "Render thread");
             renderThread.setUncaughtExceptionHandler((t, e) -> {
-                logger.error("Exception thrown in render thread", e);
+                logger.error(STR. "Exception thrown in \{ t }" , e);
                 GLFW.setWindowShouldClose(window, true);
             });
             renderThread.start();
@@ -173,6 +177,34 @@ public final class CuboidX implements Runnable {
             GLFW.destroyWindow(window);
             GLFW.terminate();
         }
+    }
+
+    private void loadIcon() {
+        if (Platform.current() instanceof Platform.Windows) {
+            final List<NativeImage> list = List.of(
+                loadIcon("16"),
+                loadIcon("32"),
+                loadIcon("48")
+            );
+            try (Arena arena = Arena.ofConfined()) {
+                final GLFWImage.Buffer buffer = GLFWImage.Buffer.create(arena,
+                    list.stream().filter(Predicate.not(NativeImage::failed)).count());
+                for (int i = 0, j = 0, listSize = list.size(); i < listSize; i++) {
+                    NativeImage image = list.get(i);
+                    if (image != null && !image.failed()) {
+                        buffer.width(j, image.width())
+                            .height(j, image.height())
+                            .pixels(j, image.data());
+                        j++;
+                    }
+                }
+                GLFW.setWindowIcon(window(), buffer);
+            }
+        }
+    }
+
+    private static NativeImage loadIcon(String size) {
+        return NativeImage.load(STR. "assets/cuboidx/icon\{ size }.png" );
     }
 
     private void onCursorPos(MouseEvent.CursorPos event) {
@@ -212,6 +244,7 @@ public final class CuboidX implements Runnable {
                         case GLFW.KEY_1 -> player().setHotBarTo(0);
                         case GLFW.KEY_2 -> player().setHotBarTo(1);
                         case GLFW.KEY_3 -> player().setHotBarTo(2);
+                        case GLFW.KEY_4 -> player().setHotBarTo(3);
                     }
                 }
             }
@@ -267,7 +300,7 @@ public final class CuboidX implements Runnable {
     @Override
     public void run() {
         GLFW.makeContextCurrent(window);
-        CheckUtil.checkNotNull(GLLoader.load(GLFW::getProcAddress, true), "Failed to load OpenGL");
+        Objects.requireNonNull(GLLoader.load(GLFW::getProcAddress, true), "Failed to load OpenGL");
         GL.clearColor(0.4f, 0.6f, 0.9f, 1.0f);
         textureManager = new TextureManager();
         gameRenderer = new GameRenderer(this);

@@ -27,7 +27,6 @@ import cuboidx.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import overrungl.opengl.GL;
-import overrungl.util.MemoryStack;
 
 import java.lang.foreign.Arena;
 import java.util.HashMap;
@@ -73,9 +72,7 @@ public final class GLProgram implements AutoCloseable {
             GL.linkProgram(program.id());
             final boolean failed = GL.getProgrami(program.id(), GL.LINK_STATUS) == GL.FALSE;
             if (failed) {
-                try (MemoryStack stack = MemoryStack.stackPush()) {
-                    logger.error("Failed to link the program: {}", GL.getProgramInfoLog(stack, program.id));
-                }
+                logger.error("Failed to link the program: {}", GL.getProgramInfoLog(program.id));
             }
             GL.detachShader(program.id(), vsh);
             GL.detachShader(program.id(), fsh);
@@ -100,9 +97,7 @@ public final class GLProgram implements AutoCloseable {
         GL.shaderSource(shader, src);
         GL.compileShader(shader);
         if (GL.getShaderi(shader, GL.COMPILE_STATUS) == GL.FALSE) {
-            try (MemoryStack stack = MemoryStack.stackPush()) {
-                logger.error("Failed to compile the {} shader: {}", typeName, GL.getShaderInfoLog(stack, shader));
-            }
+            logger.error("Failed to compile the {} shader: {}", typeName, GL.getShaderInfoLog(shader));
             return -1;
         }
         return shader;

@@ -20,9 +20,11 @@ package cuboidx.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -71,18 +73,15 @@ public final class FileUtil {
         }
     }
 
-    @Nullable
-    public static MemorySegment readBinary(String path, int bufferSize) {
+    public static @NotNull MemorySegment readBinary(String path, int bufferSize) throws IOException {
         return readBinary(STACK_WALKER.getCallerClass(), path, bufferSize);
     }
 
-    @Nullable
-    public static MemorySegment readBinary(Class<?> cls, String path, int bufferSize) {
+    public static @NotNull MemorySegment readBinary(Class<?> cls, String path, int bufferSize) throws IOException {
         return readBinary(cls.getClassLoader(), path, bufferSize);
     }
 
-    @Nullable
-    public static MemorySegment readBinary(ClassLoader classLoader, String path, int bufferSize) {
+    public static @NotNull MemorySegment readBinary(ClassLoader classLoader, String path, int bufferSize) throws IOException {
         final boolean isHttp = path.startsWith("http");
         final Path filePath = isHttp ? null : Path.of(path);
         try {
@@ -118,8 +117,7 @@ public final class FileUtil {
                 return segment.asSlice(0, pos);
             }
         } catch (Exception e) {
-            logger.error(STR."Failed to load file '\{path}'", e);
-            return null;
+            throw new IOException(STR."Failed to load file '\{path}'", e);
         }
     }
 
