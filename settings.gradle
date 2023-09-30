@@ -8,3 +8,6 @@ pluginManagement {
 }
 
 rootProject.name = projName
+
+include("core")
+project(":core").projectDir = file("modules/cuboidx.core/")

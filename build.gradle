@@ -27,99 +27,110 @@ switch (OperatingSystem.current()) {
         break
 }
 
-group projGroupId
-version = projVersion
+allprojects {
+    group = projGroupId
+    version = projVersion
 
-repositories {
-    mavenCentral()
-    maven { url 'https://maven.aliyun.com/repository/central' }
-    // temporary maven repositories
-    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
-    maven { url 'https://s01.oss.sonatype.org/content/repositories/releases' }
-    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
-}
-
-dependencies {
-    implementation "com.google.code.gson:gson:2.10.1"
-    implementation "io.github.over-run:bin-packing:0.4.0"
-    implementation "io.github.over-run:bin-tag:0.1.0"
-    implementation "io.github.over-run:timer:0.2.0"
-    implementation "io.github.over-run:unifont:15.0.01.2"
-    implementation "org.apache.logging.log4j:log4j-api:2.20.0"
-    implementation "org.apache.logging.log4j:log4j-core:2.20.0"
-    annotationProcessor "org.apache.logging.log4j:log4j-core:2.20.0"
-
-    implementation platform("io.github.over-run:overrungl-bom:0.1.0-SNAPSHOT")
-
-    implementation "io.github.over-run:overrungl"
-    implementation "io.github.over-run:overrungl-glfw"
-    implementation "io.github.over-run:overrungl-joml"
-    implementation "io.github.over-run:overrungl-opengl"
-    implementation "io.github.over-run:overrungl-stb"
-    runtimeOnly "io.github.over-run:overrungl-glfw::$overrunglNatives"
-    runtimeOnly "io.github.over-run:overrungl-stb::$overrunglNatives"
-    implementation "org.joml:joml:1.10.5"
-
-    compileOnly "org.jetbrains:annotations:24.0.1"
-}
-
-def targetJavaVersion = 21
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.compilerArgs += '--enable-preview'
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release.set(targetJavaVersion)
+    repositories {
+        mavenCentral()
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        // temporary maven repositories
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+        maven { url 'https://s01.oss.sonatype.org/content/repositories/releases' }
+        maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
     }
 }
 
-java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
+subprojects {
+    apply plugin: "java-library"
+    apply plugin: "idea"
+
+    dependencies {
+        implementation(platform("io.github.over-run:utilities:0.+"))
+        implementation "io.github.over-run:bin-packing"
+        implementation "io.github.over-run:bin-tag"
+        implementation "io.github.over-run:pooling"
+        implementation "io.github.over-run:timer"
+        implementation "io.github.over-run:unifont"
+        implementation "com.google.code.gson:gson:2.10.1"
+        implementation "org.apache.logging.log4j:log4j-api:2.20.0"
+        implementation "org.apache.logging.log4j:log4j-core:2.20.0"
+        annotationProcessor "org.apache.logging.log4j:log4j-core:2.20.0"
+
+        implementation platform("io.github.over-run:overrungl-bom:0.1.0-SNAPSHOT")
+
+        implementation "io.github.over-run:overrungl"
+        implementation "io.github.over-run:overrungl-glfw"
+        implementation "io.github.over-run:overrungl-joml"
+        implementation "io.github.over-run:overrungl-opengl"
+        implementation "io.github.over-run:overrungl-stb"
+        runtimeOnly "io.github.over-run:overrungl-glfw::$overrunglNatives"
+        runtimeOnly "io.github.over-run:overrungl-stb::$overrunglNatives"
+        implementation "org.joml:joml:1.10.5"
+
+        compileOnly "org.jetbrains:annotations:24.0.1"
     }
-    archivesBaseName = projArtifactId
-    withJavadocJar()
-    withSourcesJar()
-}
 
-javadoc {
-    failOnError = false
-    options.encoding 'UTF-8'
-    options.charSet 'UTF-8'
-    options.author true
-    options.locale 'en_US'
-    options.links "https://docs.oracle.com/en/java/javase/$sourceCompatibility/docs/api/"
-    options.windowTitle "$projName $projVersion Javadoc"
-}
+    def targetJavaVersion = 21
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.compilerArgs += '--enable-preview'
+        if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+            options.release.set(targetJavaVersion)
+        }
+    }
 
-jar {
-    manifestContentCharset 'utf-8'
-    metadataCharset 'utf-8'
-    from 'LICENSE'
-    manifest.attributes(
-        'Specification-Title': projName,
-        'Specification-Vendor': orgName,
-        'Specification-Version': '0',
-        'Implementation-Title': projName,
-        'Implementation-Vendor': orgName,
-        'Implementation-Version': archiveVersion
-    )
-}
+    java {
+        def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+        if (JavaVersion.current() < javaVersion) {
+            toolchain.languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
+        }
+        archivesBaseName = projArtifactId
+        withJavadocJar()
+        withSourcesJar()
+    }
 
-sourcesJar {
-    dependsOn classes
-    archiveClassifier.set 'sources'
-    from sourceSets.main.allSource, 'COPYING.LESSER'
-}
+    javadoc {
+        failOnError = false
+        options.encoding 'UTF-8'
+        options.charSet 'UTF-8'
+        options.author true
+        options.locale 'en_US'
+        options.links "https://docs.oracle.com/en/java/javase/$sourceCompatibility/docs/api/"
+        options.windowTitle "$projName $projVersion Javadoc"
+    }
 
-javadocJar {
-    dependsOn javadoc
-    archiveClassifier.set 'javadoc'
-    from javadoc, 'COPYING.LESSER'
-}
+    jar {
+        manifestContentCharset 'utf-8'
+        metadataCharset 'utf-8'
+        from 'LICENSE'
+        manifest.attributes(
+            'Specification-Title': projName,
+            'Specification-Vendor': orgName,
+            'Specification-Version': '0',
+            'Implementation-Title': projName,
+            'Implementation-Vendor': orgName,
+            'Implementation-Version': archiveVersion
+        )
+    }
 
-artifacts {
-    archives javadocJar, sourcesJar
+    sourcesJar {
+        dependsOn classes
+        archiveClassifier.set 'sources'
+        from sourceSets.main.allSource, 'COPYING'
+    }
+
+    javadocJar {
+        dependsOn javadoc
+        archiveClassifier.set 'javadoc'
+        from javadoc, 'COPYING'
+    }
+
+    artifacts {
+        archives javadocJar, sourcesJar
+    }
+
+    idea.module.inheritOutputDirs = true
 }
 
 publishing.publications {
@@ -135,8 +146,8 @@ publishing.publications {
             url.set "https://github.com/$projVcs"
             licenses {
                 license {
-                    name.set 'LGPL-3.0-only'
-                    url.set "https://raw.githubusercontent.com/$projVcs/$projBranch/COPYING.LESSER"
+                    name.set 'GPL-3.0-only'
+                    url.set "https://raw.githubusercontent.com/$projVcs/$projBranch/COPYING"
                 }
             }
             organization {
@@ -182,5 +193,3 @@ signing {
     if (!version.endsWith('-SNAPSHOT') && Boolean.parseBoolean(System.getProperty("gpg.signing", "true")))
         sign publishing.publications.mavenJava
 }
-
-idea.module.inheritOutputDirs = true
